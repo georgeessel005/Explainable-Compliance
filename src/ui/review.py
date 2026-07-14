@@ -256,10 +256,17 @@ def render_finding_card(
                 else:
                     # None: cannot assert provenance — render no badge, only Primary/Secondary.
                     provenance = ""
+                # A CE / CE+ pillar has no identifier distinct from its name (control_id
+                # == control_name), unlike ISO where the id is a code like "A.8.8". Print
+                # the label once in that case rather than stuttering "Patch Management
+                # Patch Management".
+                if mapping.control_id.strip() == mapping.control_name.strip():
+                    label = f"**{mapping.control_id}**"
+                else:
+                    label = f"**{mapping.control_id}** {mapping.control_name}"
                 st.markdown(
                     f"- {_badge(mapping.mapping_type)} &nbsp; "
-                    f"`{mapping.framework.value}` — **{mapping.control_id}** "
-                    f"{mapping.control_name}{provenance}"
+                    f"`{mapping.framework.value}` — {label}{provenance}"
                 )
             if any_unverified:
                 st.caption(

@@ -586,3 +586,69 @@ def test_gate_verdict_semantics_unchanged_by_the_banner_fix():
     Article 22 control, which would change what the control means.
     """
     assert can_generate_report([]) is True
+
+
+# ---------------------------------------------------------------------------
+# 9. Control labels must not stutter on CE / CE+ rows.
+#
+# Spotted on the deployed app: every Cyber Essentials and CE Plus control row
+# rendered its label twice -- "Cyber Essentials - Patch Management Patch
+# Management" in the review card, and the same string in two adjacent cells of
+# the PDF controls table. Cause: a CE pillar has no identifier distinct from its
+# name (control_id == control_name), unlike ISO where control_id is a code like
+# "A.8.8" and control_name is prose. Both renderers printed id + name
+# unconditionally. 16 of the 41 mapping rows in the rule base are affected.
+#
+# This is presentation only -- the rule data is correct -- but it is on every
+# finding card and in the submission PDF.
+# ---------------------------------------------------------------------------
+
+def test_ce_pillars_have_no_separate_control_code(rulebase):
+    """Pins the data shape the renderers branch on.
+
+    If a future rule base gives CE pillars a distinct code, the stutter guard
+    below becomes dead and should be revisited rather than silently ignored.
+    """
+    from src.models import Framework
+
+    ce_rows = [
+        m
+        for r in rulebase.rules
+        for m in r.control_mappings
+        if m.framework in (Framework.CE, Framework.CE_PLUS)
+    ]
+    assert ce_rows, "expected CE / CE+ mappings in the rule base"
+    assert all(m.control_id.strip() == m.control_name.strip() for m in ce_rows)
+
+    iso_rows = [
+        m
+        for r in rulebase.rules
+        for m in r.control_mappings
+        if m.framework is Framework.ISO27001
+    ]
+    # ISO rows are the contrast case: code and name genuinely differ.
+    assert all(m.control_id.strip() != m.control_name.strip() for m in iso_rows)
+
+
+def test_pdf_controls_table_does_not_repeat_the_control_label(findings):
+    """A CE row must not print its label in both the code and name columns."""
+    from src.report.pdf_builder import _controls_table, _styles
+
+    finding = next(f for f in findings if f.rule_id == "CE-PATCH-001")
+
+    # Assert on the built table's cell data rather than the rendered glyphs: this
+    # pins the fix at its source and stays readable.
+    table = _controls_table(finding, _styles())
+    rows = table._cellvalues[1:]  # skip the header row
+
+    def _text(cell):
+        return cell.text if hasattr(cell, "text") else str(cell)
+
+    seen_ce = False
+    for row in rows:
+        code, name = _text(row[1]), _text(row[2])
+        assert code != name, f"controls table repeats {code!r} in adjacent cells"
+        if _text(row[0]).startswith("Cyber Essentials"):
+            seen_ce = True
+            assert code == "-", "CE rows carry no control code, so the column reads '-'"
+    assert seen_ce, "expected a CE row on the reference finding"

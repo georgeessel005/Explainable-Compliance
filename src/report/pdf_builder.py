@@ -364,10 +364,17 @@ def _controls_table(finding: ComplianceFinding, styles) -> Table:
         provenance = _mapping_provenance(finding, mapping)
         if provenance is False:
             unverified_rows.append(row_index)
+        # A CE / CE+ pillar has no identifier distinct from its name (control_id ==
+        # control_name), unlike ISO where the id is a code like "A.8.8". Printing both
+        # repeated the same string in adjacent cells, and the narrow Control column is
+        # sized for a code, not a pillar name. Show the code column as "-" and let the
+        # wide name column carry the label.
+        stutters = mapping.control_id.strip() == mapping.control_name.strip()
+        control_code = "-" if stutters else mapping.control_id
         rows.append(
             [
                 _p(mapping.framework.value, styles["cell"]),
-                _p(mapping.control_id, styles["cell"]),
+                _p(control_code, styles["cell"]),
                 _p(mapping.control_name, styles["cell"]),
                 _p(mapping.mapping_type.value, styles["cell"]),
                 _p(_PROVENANCE_LABEL[provenance], styles["cell"]),
