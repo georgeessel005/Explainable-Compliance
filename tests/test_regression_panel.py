@@ -536,3 +536,53 @@ def test_report_id_format_is_collision_resistant():
 
     ids = {new_id() for _ in range(2000)}
     assert len(ids) == 2000
+
+
+# ---------------------------------------------------------------------------
+# 8. Blank first load must not claim the Article 22 gate is unlocked.
+#
+# Found on the deployed app, not by the suite: with zero findings loaded, the
+# gate banner rendered the green "All findings resolved - Stage 5 unlocked.
+# 0 finding(s) reviewed" success state, because "no escalations are open" is
+# vacuously true on an empty decision list. Stage 5 was never actually
+# compilable (compile_report refuses with no findings and the button is
+# disabled), so this was presentation, not a gate hole -- but it is the first
+# thing a reader sees, and it misrepresents the one control the tool exists to
+# demonstrate.
+#
+# Pre-fix verification: against the old branch order this test fails on the
+# `"Stage 5 unlocked" not in banners` assertion.
+# Fix: src/ui/review.py render_gate_banner grew an empty-state branch. The
+# returned verdict (can_generate_report) is deliberately unchanged.
+# ---------------------------------------------------------------------------
+
+def test_blank_first_load_does_not_claim_stage_5_unlocked():
+    """A cold app with nothing loaded must read as locked, not resolved."""
+    from streamlit.testing.v1 import AppTest
+
+    at = AppTest.from_file("streamlit_app.py", default_timeout=300).run()
+
+    assert not at.exception, "blank first load raised"
+    assert not at.session_state["findings"], "expected a blank state"
+
+    banners = [e.value for e in at.info] + [e.value for e in at.success]
+    joined = " || ".join(banners)
+
+    # The bug: the green success banner on an empty queue.
+    assert "Stage 5 unlocked" not in joined, (
+        "blank load claims the Article 22 gate is unlocked with zero findings"
+    )
+    assert "Stage 5 locked" in joined, "blank load lost its empty-state banner"
+
+    # And the message appears exactly once - the empty branch used to stack a
+    # redundant st.info saying the same sentence as the banner.
+    assert sum("review queue" in b for b in banners) == 1, "duplicate empty-state message"
+
+
+def test_gate_verdict_semantics_unchanged_by_the_banner_fix():
+    """The empty-state branch is cosmetic: can_generate_report([]) is still True.
+
+    Guards against someone "fixing" the banner by folding coverage into the
+    Article 22 control, which would change what the control means.
+    """
+    assert can_generate_report([]) is True

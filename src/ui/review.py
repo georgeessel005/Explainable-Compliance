@@ -126,7 +126,19 @@ def render_gate_banner(
 
     status = gate_status(decisions, finding_ids)
 
-    if not status["escalation_clear"]:
+    if not finding_ids and not decisions:
+        # Nothing loaded yet. "No escalations are open" is vacuously true here, so the
+        # normal branches below would render the green "Stage 5 unlocked" banner on a
+        # blank first load — which misrepresents the Article 22 control to anyone reading
+        # the screen. Stage 5 is independently gated on findings existing (compile_report
+        # refuses with no findings, and the button is disabled), so this branch is
+        # presentation only: the verdict returned below is deliberately unchanged.
+        st.info(
+            "**Stage 5 locked — nothing to review yet.** "
+            "Run Stage 1 → 2 → 3 from the sidebar to populate the review queue.",
+            icon="⏳",
+        )
+    elif not status["escalation_clear"]:
         count = status["escalated_count"]
         st.error(
             f"**Stage 5 blocked: {count} finding(s) escalated.** "
@@ -369,10 +381,8 @@ def render_review_stage(
     st.subheader("Stage 4 — Human validation gate")
 
     if not findings:
-        st.info(
-            "No findings to review. Run Stage 1 → 2 → 3 from the sidebar to populate "
-            "the review queue."
-        )
+        # The gate banner carries the empty-state message on its own; a second info box
+        # repeating "run Stage 1 -> 2 -> 3" just doubles the same sentence on first load.
         render_gate_banner(decisions, finding_ids=None)
         return can_generate_report(decisions)
 
