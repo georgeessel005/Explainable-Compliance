@@ -1,0 +1,17 @@
+# Clean light theme. Deliberately restrained: this is an audit tool, so the only
+# strong colour is reserved for the gate banners (green = unlocked, red = blocked)
+# and the Primary/Secondary mapping badges. Nothing else should compete with them.
+
+[theme]
+base = "light"
+primaryColor = "#1f4e79"            # deep blue - matches the heatmap Primary cells
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#f0f2f6"
+textColor = "#262730"
+font = "sans serif"
+
+[server]
+headless = true
+
+[browser]
+gatherUsageStats = false
