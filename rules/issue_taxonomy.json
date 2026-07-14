@@ -1,0 +1,151 @@
+{
+  "$comment": [
+    "issue_taxonomy.json - machine-readable description of every IssueCode in src/models.py.",
+    "Consumed by the Streamlit UI (labels, grouping, severity ordering) and by the explainer.",
+    "The `ce_pillar` of each entry is taken from the CE pillar column of George's Appendix Aii",
+    "and is authoritative. `severity_weight` and `default_severity` are engineering defaults",
+    "used only for display ordering and the evaluation dashboard - they are NOT sourced from",
+    "the interim report and carry no compliance meaning. `vulnerability_linked` tells the",
+    "mapping engine whether to attach triggering_cve / triggering_cvss to the finding.",
+    "ISO control mappings live in ce_iso_mappings.yaml, not here."
+  ],
+  "schema_version": "1.0",
+  "severity_weight_scale": "0.0 - 1.0, engineering default for display ordering only; not sourced from Appendix Aii",
+  "issues": {
+    "PATCH_MISSING": {
+      "label": "Missing security patch",
+      "ce_pillar": "Patch Management",
+      "rule_id": "CE-PATCH-001",
+      "default_severity": "Critical",
+      "severity_weight": 1.0,
+      "vulnerability_linked": true,
+      "meaning": "A vendor security update for a known CVE is available but has not been applied to the asset."
+    },
+    "PATCH_RECORD_ABSENT": {
+      "label": "No patch record held",
+      "ce_pillar": "Patch Management",
+      "rule_id": "CE-PATCH-002",
+      "default_severity": "Medium",
+      "severity_weight": 0.5,
+      "vulnerability_linked": true,
+      "meaning": "The asset has no retrievable patch or change record, so its update history cannot be evidenced."
+    },
+    "DEFAULT_CREDENTIALS": {
+      "label": "Default credentials in use",
+      "ce_pillar": "Secure Configuration",
+      "rule_id": "CE-SECCONF-001",
+      "default_severity": "Critical",
+      "severity_weight": 0.95,
+      "vulnerability_linked": false,
+      "meaning": "Vendor default accounts or passwords remain active on the asset."
+    },
+    "INSECURE_PROTOCOL": {
+      "label": "Insecure protocol enabled",
+      "ce_pillar": "Secure Configuration",
+      "rule_id": "CE-SECCONF-002",
+      "default_severity": "High",
+      "severity_weight": 0.7,
+      "vulnerability_linked": false,
+      "meaning": "The asset exposes a service over a cleartext or otherwise insecure protocol."
+    },
+    "EXCESSIVE_PRIVILEGES": {
+      "label": "Excessive account privileges",
+      "ce_pillar": "User Access Control",
+      "rule_id": "CE-UAC-001",
+      "default_severity": "High",
+      "severity_weight": 0.75,
+      "vulnerability_linked": false,
+      "meaning": "An account holds administrative or elevated rights beyond its business need."
+    },
+    "STALE_ACCOUNT": {
+      "label": "Dormant account not removed",
+      "ce_pillar": "User Access Control",
+      "rule_id": "CE-UAC-002",
+      "default_severity": "Medium",
+      "severity_weight": 0.55,
+      "vulnerability_linked": false,
+      "meaning": "A dormant or leaver account remains enabled on the asset."
+    },
+    "PASSWORD_POLICY_NONCOMPLIANCE": {
+      "label": "Password policy non-compliant",
+      "ce_pillar": "User Access Control",
+      "rule_id": "CE-UAC-003",
+      "default_severity": "High",
+      "severity_weight": 0.7,
+      "vulnerability_linked": false,
+      "meaning": "The password policy applied to the asset falls short of the Cyber Essentials minimum."
+    },
+    "MFA_ABSENT": {
+      "label": "MFA not enabled",
+      "ce_pillar": "User Access Control",
+      "rule_id": "CE-UAC-004",
+      "default_severity": "High",
+      "severity_weight": 0.85,
+      "vulnerability_linked": false,
+      "meaning": "Administrative or internet-facing access to the asset is available without a second factor."
+    },
+    "UNRESTRICTED_INBOUND": {
+      "label": "Unrestricted inbound rule",
+      "ce_pillar": "Firewalls",
+      "rule_id": "CE-FW-001",
+      "default_severity": "Critical",
+      "severity_weight": 0.9,
+      "vulnerability_linked": false,
+      "meaning": "An inbound firewall rule permits any source to reach the asset."
+    },
+    "UNMANAGED_SERVICE_EXPOSED": {
+      "label": "Unmanaged service exposed",
+      "ce_pillar": "Firewalls",
+      "rule_id": "CE-FW-002",
+      "default_severity": "High",
+      "severity_weight": 0.65,
+      "vulnerability_linked": false,
+      "meaning": "A network service is reachable at the boundary but is not under active management."
+    },
+    "FLAT_NETWORK": {
+      "label": "No network segregation",
+      "ce_pillar": "Firewalls",
+      "rule_id": "CE-FW-003",
+      "default_severity": "Medium",
+      "severity_weight": 0.6,
+      "vulnerability_linked": false,
+      "meaning": "The asset sits on a flat network permitting unfiltered lateral movement."
+    },
+    "AV_SIGNATURE_OUTDATED": {
+      "label": "Anti-malware signatures stale",
+      "ce_pillar": "Malware Protection",
+      "rule_id": "CE-MAL-001",
+      "default_severity": "High",
+      "severity_weight": 0.8,
+      "vulnerability_linked": false,
+      "meaning": "The anti-malware engine on the asset is running out-of-date definitions."
+    },
+    "NO_EDR_INGESTION": {
+      "label": "Endpoint telemetry not ingested",
+      "ce_pillar": "Malware Protection",
+      "rule_id": "CE-MAL-002",
+      "default_severity": "Medium",
+      "severity_weight": 0.5,
+      "vulnerability_linked": false,
+      "meaning": "Endpoint detection telemetry from the asset is not reaching the monitoring platform."
+    },
+    "AUTH_SCAN_FAILURE": {
+      "label": "Authenticated scan failed",
+      "ce_pillar": "CE+ Vulnerability Scan",
+      "rule_id": "CEP-VULN-001",
+      "default_severity": "High",
+      "severity_weight": 0.8,
+      "vulnerability_linked": true,
+      "meaning": "The CE Plus authenticated vulnerability scan failed or returned outstanding findings."
+    },
+    "INSUFFICIENT_SCAN_CREDENTIALS": {
+      "label": "Scan credentials insufficient",
+      "ce_pillar": "CE+ Authenticated Audit",
+      "rule_id": "CEP-AUDIT-001",
+      "default_severity": "Medium",
+      "severity_weight": 0.45,
+      "vulnerability_linked": false,
+      "meaning": "The credentials supplied for the authenticated audit could not complete the assessment."
+    }
+  }
+}

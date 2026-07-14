@@ -15,6 +15,7 @@ from typing import Optional
 
 from src.audit.log import AuditLog
 from src.gate import can_generate_report, gate_status, resolve_decisions
+from src.mapping.engine import is_verified_mapping
 from src.models import (
     AnalystDecision,
     ComplianceFinding,
@@ -110,17 +111,20 @@ def apply_decision(
 
 def render_gate_banner(
     decisions: list[AnalystDecision],
-    total_findings: Optional[int] = None,
+    finding_ids: Optional[list[str]] = None,
 ) -> bool:
     """Live Stage 5 gate banner. Returns the hard control's verdict (escalation clear).
 
     The returned value is `can_generate_report` and nothing else. Review coverage is
     displayed but deliberately not folded into the return, so a caller that trusts this
     banner still gets the Article 22 answer.
+
+    `finding_ids` is the live finding set: coverage is measured by set containment, so a
+    stray/orphan decision cannot inflate it (see `gate_status`).
     """
     import streamlit as st
 
-    status = gate_status(decisions, total_findings)
+    status = gate_status(decisions, finding_ids)
 
     if not status["escalation_clear"]:
         count = status["escalated_count"]
@@ -224,11 +228,31 @@ def render_finding_card(
         )
         if mappings:
             st.markdown("**Linked controls**")
+            any_unverified = False
             for mapping in mappings:
+                # Provenance: is THIS intersection sourced from George's Appendix Aii?
+                # The `verified` flag is stripped when a ControlMapping is built (models.py
+                # frozen), so it is read back from the mapping engine's index by identity.
+                verified = is_verified_mapping(
+                    finding.rule_id, mapping.framework, mapping.control_id
+                )
+                if verified is True:
+                    provenance = " &nbsp; :green-background[✓ sourced]"
+                elif verified is False:
+                    provenance = " &nbsp; :orange-background[⚠ unverified]"
+                    any_unverified = True
+                else:
+                    # None: cannot assert provenance — render no badge, only Primary/Secondary.
+                    provenance = ""
                 st.markdown(
                     f"- {_badge(mapping.mapping_type)} &nbsp; "
                     f"`{mapping.framework.value}` — **{mapping.control_id}** "
-                    f"{mapping.control_name}"
+                    f"{mapping.control_name}{provenance}"
+                )
+            if any_unverified:
+                st.caption(
+                    "⚠ Mappings marked *unverified* are best-effort and not yet sourced "
+                    "from George's Appendix Aii — confirm before citing them."
                 )
 
         # --- remediation ---
@@ -349,12 +373,14 @@ def render_review_stage(
             "No findings to review. Run Stage 1 → 2 → 3 from the sidebar to populate "
             "the review queue."
         )
-        render_gate_banner(decisions, total_findings=None)
+        render_gate_banner(decisions, finding_ids=None)
         return can_generate_report(decisions)
 
     explanations_by_id = {e.finding_id: e for e in (explanations or [])}
 
-    gate_open = render_gate_banner(decisions, total_findings=len(findings))
+    gate_open = render_gate_banner(
+        decisions, finding_ids=[f.finding_id for f in findings]
+    )
 
     # --- filters ---
     filter_col, page_col = st.columns([2, 1])
@@ -398,6 +424,55 @@ def render_review_stage(
         f"Showing {start + 1}–{start + len(page_items)} of {len(visible)} finding(s)"
         + (f" (filtered from {len(findings)})" if len(visible) != len(findings) else "")
     )
+
+    # --- bulk approve (Approve only; Modify and Escalate stay deliberate, per-finding) ---
+    # 309 findings is unusable one click at a time, so approving the pending queue in bulk
+    # is offered. Each approval below still writes its OWN AnalystDecision and its OWN audit
+    # entry via apply_decision — the per-finding accountability trail is never collapsed into
+    # a single record. Only AWAITING_REVIEW findings are targeted, so a bulk approve can never
+    # silently override a deliberate Escalate or Modify.
+    unreviewed_on_page = [
+        f for f in page_items
+        if status_of(f.finding_id, decisions) == FindingStatus.AWAITING_REVIEW
+    ]
+    unreviewed_in_scope = [
+        f for f in visible
+        if status_of(f.finding_id, decisions) == FindingStatus.AWAITING_REVIEW
+    ]
+    scope_label = "the current filter" if status_filter else "all findings"
+
+    bulk_page_col, bulk_scope_col = st.columns(2)
+    if bulk_page_col.button(
+        f"✅ Approve all unreviewed on this page ({len(unreviewed_on_page)})",
+        key="bulk_approve_page",
+        disabled=not unreviewed_on_page,
+        width="stretch",
+        help="Records an individual Approve decision and audit entry for each finding.",
+    ):
+        for f in unreviewed_on_page:
+            apply_decision(
+                f.finding_id, DecisionType.APPROVE, decisions, audit_log,
+                explanations_by_id,
+                analyst_note="Bulk approval — all unreviewed on this page.",
+                analyst_id=analyst_id,
+            )
+        st.rerun()
+
+    if bulk_scope_col.button(
+        f"✅ Approve all unreviewed matching {scope_label} ({len(unreviewed_in_scope)})",
+        key="bulk_approve_scope",
+        disabled=not unreviewed_in_scope,
+        width="stretch",
+        help="Records an individual Approve decision and audit entry for each finding.",
+    ):
+        for f in unreviewed_in_scope:
+            apply_decision(
+                f.finding_id, DecisionType.APPROVE, decisions, audit_log,
+                explanations_by_id,
+                analyst_note=f"Bulk approval — all unreviewed matching {scope_label}.",
+                analyst_id=analyst_id,
+            )
+        st.rerun()
 
     for finding in page_items:
         render_finding_card(

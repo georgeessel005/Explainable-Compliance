@@ -12,45 +12,39 @@ Entry point for Streamlit Community Cloud. Drives the five-stage pipeline:
 All cross-rerun state lives in st.session_state (Streamlit re-executes this whole script
 on every interaction). No browser storage, no network calls.
 
---------------------------------------------------------------------------------------
-PARALLEL BUILD NOTE
-Sibling modules (ingestion, mapping, explain, report) are built concurrently. Every
-cross-module import below is defensive: if the real module is absent or half-written,
-a thin local mock marked `# MOCK:` keeps the app booting. Grep `# MOCK:` — the
-integration pass removes each one.
---------------------------------------------------------------------------------------
+Every stage below runs against the real sibling module. Imports are direct and at module
+scope: a broken sibling must fail loudly at boot rather than degrade into stand-in data,
+because an app that renders fake findings convincingly is worse than one that will not
+start.
 """
 from __future__ import annotations
 
-import hashlib
 import os
 import tempfile
 import time
-from datetime import date, datetime, timedelta, timezone
+import uuid
+from datetime import datetime, timezone
 from typing import Optional
 
 import streamlit as st
 
 from src.audit.log import AuditLog
+from src.data.generate_synthetic import main as generate_dataset
+from src.explain.explainer import explain
 from src.gate import can_generate_report, escalated_finding_ids, gate_status
+from src.ingestion.loader import load_and_validate
+from src.mapping.engine import load_rules, map_findings
+from src.mapping.matrix import build_matrix
 from src.models import (
     AnalystDecision,
-    AssetRecord,
     ComplianceFinding,
     ComplianceReport,
-    ControlMapping,
     Explanation,
     FindingStatus,
-    Framework,
     IngestionResult,
-    IssueCode,
-    IssueRule,
-    MappingType,
-    RawVulnerability,
-    RejectionError,
-    RuleBase,
-    Severity,
 )
+from src.report.integrity import sha256_of_file
+from src.report.pdf_builder import compile_pdf
 from src.ui.heatmap import render_heatmap
 from src.ui.metrics import render_metrics
 from src.ui.review import render_review_stage
@@ -58,393 +52,15 @@ from src.ui.review import render_review_stage
 DATA_PATH = "data/synthetic/assets.json"
 RULES_DIR = "rules"
 
-#: Populated by the defensive imports below; surfaced in the sidebar so it is obvious
-#: when the app is running on mock data rather than a sibling's real implementation.
-MOCKED: list[str] = []
 
+def _ensure_dataset() -> None:
+    """Materialise Agent 1's synthetic dataset if it is not on disk yet.
 
-# ======================================================================================
-# Defensive imports.  Real module -> use it.  Missing/half-written -> thin local mock.
-# `except Exception` (not just ImportError) is deliberate: a module being written right
-# now can raise SyntaxError, NameError or AttributeError at import, and none of those
-# may take the app down mid-build.
-# ======================================================================================
-
-# ---------- Stage 1: ingestion ----------
-try:
-    from src.ingestion.loader import load_and_validate  # type: ignore
-except Exception:  # noqa: BLE001
-    MOCKED.append("src.ingestion.loader.load_and_validate")
-
-    # MOCK: src.ingestion.loader.load_and_validate (Agent 1) — remove at integration.
-    def load_and_validate(path: str) -> IngestionResult:  # type: ignore[misc]
-        """Deterministic stand-in producing a small valid set plus one rejection."""
-        import random
-
-        rng = random.Random(42)
-        assessment = date(2025, 6, 1)
-        hosts = [
-            ("web", "Ubuntu 22.04 LTS", True),
-            ("db", "Windows Server 2019", False),
-            ("app", "Ubuntu 20.04 LTS", False),
-            ("dmz", "Debian 12", True),
-            ("file", "Windows Server 2022", False),
-        ]
-        codes = list(IssueCode)
-        records: list[AssetRecord] = []
-        for i in range(12):
-            prefix, os_name, facing = hosts[i % len(hosts)]
-            picks = rng.sample(codes, rng.randint(1, 3))
-            vulns = []
-            if IssueCode.PATCH_MISSING in picks or rng.random() < 0.5:
-                score = round(rng.uniform(4.0, 9.8), 1)
-                vulns.append(
-                    RawVulnerability(
-                        cve_id=f"CVE-2024-{1000 + i}",
-                        cvss_score=score,
-                        description="Remote code execution in an unpatched component.",
-                        published_date=assessment - timedelta(days=rng.randint(30, 90)),
-                        patch_released_date=assessment - timedelta(days=rng.randint(7, 28)),
-                        patch_applied=False,
-                    )
-                )
-            records.append(
-                AssetRecord(
-                    asset_id=f"AST-{i + 1:03d}",
-                    hostname=f"{prefix}-{i + 1:02d}.example.internal",
-                    operating_system=os_name,
-                    ip_address=f"10.0.{i // 10}.{10 + i}",
-                    internet_facing=facing,
-                    environment="production" if i % 3 else "staging",
-                    criticality=rng.choice(list(Severity)[1:]),
-                    assessment_date=assessment,
-                    issue_codes=picks,
-                    vulnerabilities=vulns,
-                )
-            )
-        rejected = [
-            RejectionError(
-                raw={"asset_id": "AST-999", "hostname": "broken-01", "cvss_score": 44.0},
-                reason="MOCK sample rejection: cvss_score 44.0 exceeds the 0-10 bound; "
-                       "required field 'assessment_date' missing.",
-            )
-        ]
-        return IngestionResult(valid_records=records, rejected=rejected)
-
-
-# ---------- Stage 2: mapping ----------
-try:
-    from src.mapping.engine import load_rules, map_findings  # type: ignore
-except Exception:  # noqa: BLE001
-    MOCKED.append("src.mapping.engine.load_rules / map_findings")
-
-    # MOCK: the 15 verified rows from blueprint Section 7, used only to keep the app
-    # runnable until Agent 2's YAML rule base lands. NOT authoritative — remove at
-    # integration; rules/ce_iso_mappings.yaml is the real source.
-    _MOCK_ROWS = [
-        # issue code, rule id, title, CE framework, CE pillar, ISO id, ISO name, ISO type
-        (IssueCode.PATCH_MISSING, "CE-PATCH-001", "Missing security patch",
-         Framework.CE, "Patch Management", "A.8.8",
-         "Management of technical vulnerabilities", MappingType.PRIMARY),
-        (IssueCode.PATCH_RECORD_ABSENT, "CE-PATCH-002", "No patch record held",
-         Framework.CE, "Patch Management", "A.8.32",
-         "Change management", MappingType.SECONDARY),
-        (IssueCode.DEFAULT_CREDENTIALS, "CE-CONF-001", "Default credentials in use",
-         Framework.CE, "Secure Configuration", "A.8.9",
-         "Configuration management", MappingType.PRIMARY),
-        (IssueCode.INSECURE_PROTOCOL, "CE-CONF-002", "Insecure protocol enabled",
-         Framework.CE, "Secure Configuration", "A.8.27",
-         "Secure system architecture", MappingType.SECONDARY),
-        (IssueCode.EXCESSIVE_PRIVILEGES, "CE-UAC-001", "Excessive privileges granted",
-         Framework.CE, "User Access Control", "A.5.15",
-         "Access control", MappingType.PRIMARY),
-        (IssueCode.STALE_ACCOUNT, "CE-UAC-002", "Stale account active",
-         Framework.CE, "User Access Control", "A.5.16",
-         "Identity management", MappingType.SECONDARY),
-        (IssueCode.PASSWORD_POLICY_NONCOMPLIANCE, "CE-UAC-003",
-         "Password policy non-compliance",
-         Framework.CE, "User Access Control", "A.5.17",
-         "Authentication information", MappingType.PRIMARY),
-        (IssueCode.MFA_ABSENT, "CE-UAC-004", "Multi-factor authentication absent",
-         Framework.CE, "User Access Control", "A.8.5",
-         "Secure authentication", MappingType.PRIMARY),
-        (IssueCode.UNRESTRICTED_INBOUND, "CE-FW-001", "Unrestricted inbound access",
-         Framework.CE, "Firewalls", "A.8.20",
-         "Networks security", MappingType.PRIMARY),
-        (IssueCode.UNMANAGED_SERVICE_EXPOSED, "CE-FW-002", "Unmanaged service exposed",
-         Framework.CE, "Firewalls", "A.8.21",
-         "Security of network services", MappingType.SECONDARY),
-        (IssueCode.FLAT_NETWORK, "CE-FW-003", "Flat network, no segregation",
-         Framework.CE, "Firewalls", "A.8.22",
-         "Segregation of networks", MappingType.SECONDARY),
-        (IssueCode.AV_SIGNATURE_OUTDATED, "CE-MAL-001", "Anti-malware signatures outdated",
-         Framework.CE, "Malware Protection", "A.8.7",
-         "Protection against malware", MappingType.PRIMARY),
-        (IssueCode.NO_EDR_INGESTION, "CE-MAL-002", "No EDR telemetry ingestion",
-         Framework.CE, "Malware Protection", "A.8.16",
-         "Monitoring activities", MappingType.SECONDARY),
-        (IssueCode.AUTH_SCAN_FAILURE, "CEP-VS-001", "Authenticated scan failure",
-         Framework.CE_PLUS, "Vulnerability Scan", "A.8.8",
-         "Management of technical vulnerabilities", MappingType.PRIMARY),
-        (IssueCode.INSUFFICIENT_SCAN_CREDENTIALS, "CEP-AA-001",
-         "Insufficient scan credentials",
-         Framework.CE_PLUS, "Authenticated Audit", "A.5.15",
-         "Access control", MappingType.SECONDARY),
-    ]
-
-    # MOCK: src.mapping.engine.load_rules (Agent 2) — remove at integration.
-    def load_rules(rules_dir: str = "rules") -> RuleBase:  # type: ignore[misc]
-        rules: list[IssueRule] = []
-        for code, rule_id, title, ce_fw, pillar, iso_id, iso_name, iso_type in _MOCK_ROWS:
-            mappings = [
-                ControlMapping(
-                    framework=ce_fw,
-                    control_id=pillar,
-                    control_name=pillar,
-                    mapping_type=MappingType.PRIMARY,
-                ),
-                ControlMapping(
-                    framework=Framework.ISO27001,
-                    control_id=iso_id,
-                    control_name=iso_name,
-                    mapping_type=iso_type,
-                ),
-            ]
-            # FINDING #017 reference card: one issue code carrying several controls.
-            if code == IssueCode.PATCH_MISSING:
-                mappings.insert(
-                    1,
-                    ControlMapping(
-                        framework=Framework.CE_PLUS,
-                        control_id="Vulnerability Scan",
-                        control_name="Vulnerability Scan",
-                        mapping_type=MappingType.PRIMARY,
-                    ),
-                )
-                mappings.append(
-                    ControlMapping(
-                        framework=Framework.ISO27001,
-                        control_id="A.8.32",
-                        control_name="Change management",
-                        mapping_type=MappingType.SECONDARY,
-                    )
-                )
-            rules.append(
-                IssueRule(
-                    rule_id=rule_id,
-                    issue_code=code,
-                    title=title,
-                    control_mappings=mappings,
-                    explanation_template=(
-                        "{title} was detected on {hostname}. This fails the Cyber "
-                        "Essentials {pillar} requirement and ISO/IEC 27001:2022 Annex "
-                        "{iso_id}."
-                    ),
-                    remediation_steps=[
-                        f"Investigate {title.lower()} on the affected asset.",
-                        f"Apply the control required by {pillar}.",
-                        f"Evidence the fix against ISO/IEC 27001:2022 {iso_id}.",
-                    ],
-                )
-            )
-        return RuleBase(rules=rules)
-
-    # MOCK: src.mapping.engine.map_findings (Agent 2) — remove at integration.
-    def map_findings(  # type: ignore[misc]
-        records: list[AssetRecord], rulebase: RuleBase
-    ) -> list[ComplianceFinding]:
-        findings: list[ComplianceFinding] = []
-        counter = 0
-        for record in records:
-            worst = max(
-                record.vulnerabilities, key=lambda v: v.cvss_score, default=None
-            )
-            for code in record.issue_codes:
-                rule = rulebase.by_issue(code)
-                if rule is None:
-                    continue
-                counter += 1
-                frameworks: list[Framework] = []
-                for mapping in rule.control_mappings:
-                    if mapping.framework not in frameworks:
-                        frameworks.append(mapping.framework)
-                findings.append(
-                    ComplianceFinding(
-                        finding_id=f"F-{counter:04d}",
-                        asset=record,
-                        issue_code=code,
-                        rule_id=rule.rule_id,
-                        triggering_cve=worst.cve_id if worst else None,
-                        triggering_cvss=worst.cvss_score if worst else None,
-                        control_mappings=list(rule.control_mappings),
-                        frameworks_breached=frameworks,
-                    )
-                )
-        return findings
-
-
-try:
-    from src.mapping.matrix import build_matrix  # type: ignore
-except Exception:  # noqa: BLE001
-    MOCKED.append("src.mapping.matrix.build_matrix")
-
-    # MOCK: src.mapping.matrix.build_matrix (Agent 2) — remove at integration.
-    def build_matrix(rulebase: RuleBase):  # type: ignore[misc]
-        import pandas as pd
-
-        iso_universe = [
-            "A.5.15", "A.5.16", "A.5.17", "A.8.5", "A.8.7", "A.8.8", "A.8.9",
-            "A.8.16", "A.8.20", "A.8.21", "A.8.22", "A.8.23", "A.8.27", "A.8.32",
-        ]
-        pillars: list[str] = []
-        for rule in rulebase.rules:
-            for mapping in rule.control_mappings:
-                if mapping.framework in (Framework.CE, Framework.CE_PLUS):
-                    label = mapping.control_id
-                    if mapping.framework == Framework.CE_PLUS:
-                        label = f"CE+ {label}"
-                    if label not in pillars:
-                        pillars.append(label)
-
-        matrix = pd.DataFrame("", index=pillars, columns=iso_universe)
-        for rule in rulebase.rules:
-            ce_labels = [
-                (f"CE+ {m.control_id}" if m.framework == Framework.CE_PLUS
-                 else m.control_id)
-                for m in rule.control_mappings
-                if m.framework in (Framework.CE, Framework.CE_PLUS)
-            ]
-            iso_controls = [
-                m for m in rule.control_mappings if m.framework == Framework.ISO27001
-            ]
-            for label in ce_labels:
-                for iso in iso_controls:
-                    if iso.control_id not in matrix.columns or label not in matrix.index:
-                        continue
-                    code = "P" if iso.mapping_type == MappingType.PRIMARY else "S"
-                    # Primary wins if an intersection is reached by two rules.
-                    if matrix.at[label, iso.control_id] != "P":
-                        matrix.at[label, iso.control_id] = code
-        return matrix
-
-
-# ---------- Stage 3: explainability ----------
-try:
-    from src.explain.explainer import explain  # type: ignore
-except Exception:  # noqa: BLE001
-    MOCKED.append("src.explain.explainer.explain")
-
-    # MOCK: src.explain.explainer.explain (Agent 3) — remove at integration.
-    def explain(finding: ComplianceFinding) -> Explanation:  # type: ignore[misc]
-        asset = finding.asset
-        exposure = (
-            "The asset is internet-facing, which raises the exposure of this issue."
-            if asset.internet_facing
-            else "The asset is internal-only."
-        )
-        cve_text = ""
-        if finding.triggering_cve:
-            cve_text = (
-                f" The finding was triggered by {finding.triggering_cve} "
-                f"(CVSS {finding.triggering_cvss})."
-            )
-        controls = ", ".join(
-            f"{m.framework.value} {m.control_id} ({m.mapping_type.value})"
-            for m in finding.control_mappings
-        )
-        return Explanation(
-            finding_id=finding.finding_id,
-            plain_english=(
-                f"[MOCK EXPLANATION] {finding.issue_code.value} was detected on "
-                f"{asset.hostname} ({asset.operating_system}) during the assessment "
-                f"dated {asset.assessment_date}.{cve_text} {exposure} Because the "
-                f"control expectation is not met, this finding breaches: {controls}."
-            ),
-            linked_controls=list(finding.control_mappings),
-            remediation_steps=[
-                f"Remediate {finding.issue_code.value} on {asset.hostname}.",
-                "Re-scan the asset to evidence closure.",
-                "Record the change under your change-management process.",
-            ],
-            status=FindingStatus.AWAITING_REVIEW,
-        )
-
-
-# ---------- Stage 5: report ----------
-try:
-    from src.report.pdf_builder import compile_pdf  # type: ignore
-except Exception:  # noqa: BLE001
-    MOCKED.append("src.report.pdf_builder.compile_pdf")
-
-    # MOCK: src.report.pdf_builder.compile_pdf (Agent 3) — remove at integration.
-    def compile_pdf(report: ComplianceReport, out_path: str) -> str:  # type: ignore[misc]
-        from reportlab.lib.pagesizes import A4
-        from reportlab.pdfgen import canvas
-
-        pdf = canvas.Canvas(out_path, pagesize=A4)
-        width, height = A4
-        y = height - 60
-        pdf.setFont("Helvetica-Bold", 15)
-        pdf.drawString(50, y, "[MOCK] Compliance Report")
-        y -= 22
-        pdf.setFont("Helvetica", 9)
-        pdf.drawString(50, y, f"Report {report.report_id} — {len(report.findings)} findings")
-        y -= 14
-        pdf.drawString(50, y, f"Generated {report.generated_at:%Y-%m-%d %H:%M:%S} UTC")
-        for finding in report.findings:
-            if y < 80:
-                pdf.showPage()
-                y = height - 60
-                pdf.setFont("Helvetica", 9)
-            y -= 16
-            pdf.setFont("Helvetica-Bold", 9)
-            pdf.drawString(
-                50, y, f"{finding.finding_id} — {finding.issue_code.value} — "
-                       f"{finding.asset.hostname}"
-            )
-            pdf.setFont("Helvetica", 8)
-            for mapping in finding.control_mappings:
-                y -= 11
-                pdf.drawString(
-                    62, y,
-                    f"{mapping.framework.value}: {mapping.control_id} "
-                    f"({mapping.mapping_type.value})",
-                )
-        pdf.save()
-        return out_path
-
-
-try:
-    from src.report.integrity import sha256_of_bytes, sha256_of_file  # type: ignore
-except Exception:  # noqa: BLE001
-    MOCKED.append("src.report.integrity.sha256_of_file / sha256_of_bytes")
-
-    # MOCK: src.report.integrity (Agent 3) — remove at integration.
-    def sha256_of_bytes(data: bytes) -> str:  # type: ignore[misc]
-        return hashlib.sha256(data).hexdigest()
-
-    # MOCK: src.report.integrity (Agent 3) — remove at integration.
-    def sha256_of_file(path: str) -> str:  # type: ignore[misc]
-        digest = hashlib.sha256()
-        with open(path, "rb") as handle:
-            for chunk in iter(lambda: handle.read(65536), b""):
-                digest.update(chunk)
-        return digest.hexdigest()
-
-
-def _try_generate_dataset() -> bool:
-    """Ask Agent 1's generator to materialise the dataset if it is missing.
-
-    Best effort: the generator may not exist yet during the parallel build, in which
-    case Stage 1 falls back to whatever `load_and_validate` resolved to.
+    Runs the real generator. If it fails, the exception propagates to Stage 1's
+    handler and is surfaced to the analyst: a dataset that cannot be built is a
+    condition to report, not to paper over.
     """
-    try:
-        from src.data.generate_synthetic import main as generate_main  # type: ignore
-
-        generate_main()
-        return os.path.exists(DATA_PATH)
-    except Exception:  # noqa: BLE001
-        return False
+    generate_dataset()
 
 
 # ======================================================================================
@@ -498,7 +114,7 @@ def _reset_downstream(from_stage: int) -> None:
     if from_stage <= 3:
         st.session_state["explanations"] = []
     if from_stage <= 4:
-        discarded = st.session_state.get("decisions") or []
+        discarded = st.session_state["decisions"]
         if discarded:
             _audit().record_stage(
                 action="DECISIONS_DISCARDED",
@@ -521,11 +137,10 @@ def _reset_downstream(from_stage: int) -> None:
 # ======================================================================================
 
 def run_stage_1() -> None:
-    if not os.path.exists(DATA_PATH):
-        _try_generate_dataset()
-
     started = time.perf_counter()
     try:
+        if not os.path.exists(DATA_PATH):
+            _ensure_dataset()
         result = load_and_validate(DATA_PATH)
     except FileNotFoundError:
         st.session_state["last_error"] = (
@@ -617,7 +232,7 @@ def compile_report() -> Optional[ComplianceReport]:
     widget, or a future caller of this function. The gate is therefore re-checked HERE,
     immediately before the PDF is built, and a blocked attempt is itself audited.
     """
-    decisions: list[AnalystDecision] = st.session_state.get("decisions") or []
+    decisions: list[AnalystDecision] = st.session_state["decisions"]
     findings: list[ComplianceFinding] = st.session_state.get("findings") or []
     explanations: list[Explanation] = st.session_state.get("explanations") or []
 
@@ -642,7 +257,7 @@ def compile_report() -> Optional[ComplianceReport]:
         st.session_state["last_error"] = "Nothing to compile — no findings."
         return None
 
-    status = gate_status(decisions, total_findings=len(findings))
+    status = gate_status(decisions, finding_ids=[f.finding_id for f in findings])
     if not status["coverage_complete"]:
         st.session_state["last_error"] = (
             f"{status['outstanding_count']} finding(s) still awaiting an analyst "
@@ -651,7 +266,15 @@ def compile_report() -> Optional[ComplianceReport]:
         return None
 
     started = time.perf_counter()
-    report_id = f"RPT-{datetime.now(timezone.utc):%Y%m%d-%H%M%S}"
+    # Second-granularity timestamps collide when two reports compile in the same second,
+    # and the temp PDF path is derived from report_id, so a collision would overwrite the
+    # other session's file on Streamlit Cloud's shared /tmp. A uuid4 suffix makes the id
+    # (and therefore the path) unique per compile. This does not affect determinism:
+    # compile_pdf is a pure function of the report OBJECT and report_id is one of its
+    # fields — a fixed report still hashes stably.
+    report_id = (
+        f"RPT-{datetime.now(timezone.utc):%Y%m%d-%H%M%S-%f}-{uuid.uuid4().hex[:8]}"
+    )
     report = ComplianceReport(
         report_id=report_id,
         findings=findings,
@@ -803,15 +426,6 @@ def render_sidebar() -> None:
                 except Exception as exc:  # noqa: BLE001
                     st.error(f"Could not parse baseline: {exc}")
 
-        if MOCKED:
-            st.divider()
-            st.warning(
-                "**Running on mocks.** These modules were unavailable at import and "
-                "are stubbed locally:\n\n"
-                + "\n".join(f"- `{m}`" for m in MOCKED),
-                icon="🧪",
-            )
-
 
 # ======================================================================================
 # Stage 5 panel
@@ -821,8 +435,11 @@ def render_report_stage(gate_open: bool) -> None:
     st.subheader("Stage 5 — Report compilation")
 
     findings = st.session_state.get("findings") or []
-    decisions = st.session_state.get("decisions") or []
-    status = gate_status(decisions, total_findings=len(findings) or None)
+    decisions = st.session_state["decisions"]
+    status = gate_status(
+        decisions,
+        finding_ids=[f.finding_id for f in findings] if findings else None,
+    )
     ready = bool(findings) and status["unlocked"]
 
     if not gate_open:
@@ -878,8 +495,9 @@ def render_report_stage(gate_open: bool) -> None:
                 mime="application/pdf",
             )
             st.caption(
-                "Re-hash the downloaded file to verify integrity: "
-                f"`certutil -hashfile {report.report_id}.pdf SHA256`"
+                "Re-hash the downloaded file to verify integrity. "
+                f"Windows: `certutil -hashfile {report.report_id}.pdf SHA256` · "
+                f"Linux/macOS: `sha256sum {report.report_id}.pdf`"
             )
 
         audit_csv = _audit().to_csv()
@@ -979,7 +597,10 @@ def main() -> None:
         gate_open = render_review_stage(
             findings=st.session_state.get("findings") or [],
             explanations=st.session_state.get("explanations") or [],
-            decisions=st.session_state.get("decisions") or [],
+            # MUST be the live list object under "decisions" (guaranteed by init_state):
+            # render_review_stage appends decisions in place, so a fresh `... or []` throwaway
+            # would silently drop every analyst decision and the gate would never unlock.
+            decisions=st.session_state["decisions"],
             audit_log=_audit(),
             analyst_id=_analyst(),
         )
@@ -993,7 +614,7 @@ def main() -> None:
     with metrics_tab:
         render_metrics(
             findings=st.session_state.get("findings") or [],
-            decisions=st.session_state.get("decisions") or [],
+            decisions=st.session_state["decisions"],
             stage_times=st.session_state.get("stage_times") or {},
             baseline=st.session_state.get("baseline"),
         )

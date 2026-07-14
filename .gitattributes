@@ -1,0 +1,17 @@
+# Normalise line endings. This repo is developed on Windows and deployed to
+# Streamlit Community Cloud (Linux); pin LF so the checkout on Cloud is byte-for-byte
+# what was tested, and so the deterministic synthetic dataset never drifts on CRLF.
+* text=auto eol=lf
+
+*.py   text eol=lf
+*.json text eol=lf
+*.yaml text eol=lf
+*.yml  text eol=lf
+*.toml text eol=lf
+*.md   text eol=lf
+*.txt  text eol=lf
+
+# Never touch binaries
+*.pdf  binary
+*.png  binary
+*.ico  binary

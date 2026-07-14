@@ -1,0 +1,4007 @@
+[
+  {
+    "asset_id": "AST-0000",
+    "hostname": "lon-app-000",
+    "operating_system": "Windows Server 2022",
+    "ip_address": "203.0.113.57",
+    "internet_facing": true,
+    "environment": "production",
+    "criticality": "Low",
+    "assessment_date": "2025-06-25",
+    "issue_codes": [
+      "PATCH_MISSING",
+      "INSECURE_PROTOCOL",
+      "INSUFFICIENT_SCAN_CREDENTIALS"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2023-98080",
+        "cvss_score": 7.0,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N",
+        "description": "Remote code execution in the HTTP request parser allows an unauthenticated attacker to execute arbitrary code.",
+        "published_date": "2023-07-04",
+        "patch_released_date": "2023-07-09",
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0001",
+    "hostname": "gla-mail-001",
+    "operating_system": "Ubuntu 22.04 LTS",
+    "ip_address": "10.38.135.208",
+    "internet_facing": false,
+    "environment": "development",
+    "criticality": "Medium",
+    "assessment_date": "2025-06-29",
+    "issue_codes": [
+      "PATCH_RECORD_ABSENT",
+      "INSECURE_PROTOCOL",
+      "MFA_ABSENT",
+      "UNMANAGED_SERVICE_EXPOSED"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2025-21926",
+        "cvss_score": 7.5,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N",
+        "description": "Deserialisation of untrusted data allows arbitrary object instantiation.",
+        "published_date": "2025-05-24",
+        "patch_released_date": null,
+        "patch_applied": false
+      },
+      {
+        "cve_id": "CVE-2024-14396",
+        "cvss_score": 8.5,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N",
+        "description": "Heap-based buffer overflow in the TLS handshake routine leads to memory corruption.",
+        "published_date": "2024-06-20",
+        "patch_released_date": null,
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0002",
+    "hostname": "lee-web-002",
+    "operating_system": "Ubuntu 20.04 LTS",
+    "ip_address": "203.0.113.214",
+    "internet_facing": true,
+    "environment": "production",
+    "criticality": "Critical",
+    "assessment_date": "2025-06-27",
+    "issue_codes": [
+      "PATCH_MISSING",
+      "DEFAULT_CREDENTIALS",
+      "AV_SIGNATURE_OUTDATED"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2025-21002",
+        "cvss_score": 9.8,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+        "description": "Remote code execution in an internet-facing service allows an unauthenticated attacker to execute arbitrary code with elevated privileges.",
+        "published_date": "2025-06-06",
+        "patch_released_date": "2025-06-13",
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0003",
+    "hostname": "lon-print-003",
+    "operating_system": "Windows Server 2019",
+    "ip_address": "203.0.113.164",
+    "internet_facing": true,
+    "environment": "production",
+    "criticality": "Medium",
+    "assessment_date": "2025-06-30",
+    "issue_codes": [
+      "INSECURE_PROTOCOL",
+      "NO_EDR_INGESTION"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2024-14238",
+        "cvss_score": 8.7,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N",
+        "description": "SQL injection in a reporting endpoint allows extraction of database contents.",
+        "published_date": "2024-10-05",
+        "patch_released_date": "2024-11-03",
+        "patch_applied": false
+      },
+      {
+        "cve_id": "CVE-2024-28460",
+        "cvss_score": 3.1,
+        "cvss_vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:N/A:N",
+        "description": "Use-after-free in the image decoding library triggered by a crafted file.",
+        "published_date": "2024-06-02",
+        "patch_released_date": "2024-07-16",
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0004",
+    "hostname": "bri-jump-004",
+    "operating_system": "Windows Server 2022",
+    "ip_address": "10.9.135.37",
+    "internet_facing": false,
+    "environment": "development",
+    "criticality": "Medium",
+    "assessment_date": "2025-06-27",
+    "issue_codes": [
+      "EXCESSIVE_PRIVILEGES",
+      "FLAT_NETWORK"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2023-8331",
+        "cvss_score": 7.7,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N",
+        "description": "Privilege escalation via an unquoted service path in the installer.",
+        "published_date": "2023-03-26",
+        "patch_released_date": "2023-03-28",
+        "patch_applied": false
+      },
+      {
+        "cve_id": "CVE-2024-75341",
+        "cvss_score": 3.8,
+        "cvss_vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:N/A:N",
+        "description": "Cross-site scripting in the administrative console allows script injection.",
+        "published_date": "2024-10-24",
+        "patch_released_date": "2024-11-13",
+        "patch_applied": true
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0005",
+    "hostname": "ncl-mail-005",
+    "operating_system": "Windows Server 2019",
+    "ip_address": "10.7.150.113",
+    "internet_facing": false,
+    "environment": "production",
+    "criticality": "Critical",
+    "assessment_date": "2025-06-25",
+    "issue_codes": [
+      "DEFAULT_CREDENTIALS",
+      "INSECURE_PROTOCOL",
+      "STALE_ACCOUNT"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2025-15371",
+        "cvss_score": 2.6,
+        "cvss_vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:N/A:N",
+        "description": "Privilege escalation via an unquoted service path in the installer.",
+        "published_date": "2025-04-08",
+        "patch_released_date": "2025-04-18",
+        "patch_applied": false
+      },
+      {
+        "cve_id": "CVE-2024-51019",
+        "cvss_score": 6.1,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Information disclosure in verbose error responses reveals internal host names.",
+        "published_date": "2024-04-27",
+        "patch_released_date": "2024-05-26",
+        "patch_applied": true
+      },
+      {
+        "cve_id": "CVE-2025-90166",
+        "cvss_score": 7.9,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N",
+        "description": "Path traversal in the file upload handler exposes files outside the web root.",
+        "published_date": "2025-05-15",
+        "patch_released_date": "2025-06-24",
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0006",
+    "hostname": "ncl-file-006",
+    "operating_system": "Amazon Linux 2023",
+    "ip_address": "203.0.113.217",
+    "internet_facing": true,
+    "environment": "production",
+    "criticality": "Low",
+    "assessment_date": "2025-06-25",
+    "issue_codes": [
+      "PASSWORD_POLICY_NONCOMPLIANCE",
+      "UNRESTRICTED_INBOUND"
+    ],
+    "vulnerabilities": []
+  },
+  {
+    "asset_id": "AST-0007",
+    "hostname": "man-db-007",
+    "operating_system": "Windows 11 Pro 23H2",
+    "ip_address": "10.30.84.69",
+    "internet_facing": false,
+    "environment": "test",
+    "criticality": "Medium",
+    "assessment_date": "2025-06-28",
+    "issue_codes": [
+      "MFA_ABSENT"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2025-48576",
+        "cvss_score": 5.3,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Deserialisation of untrusted data allows arbitrary object instantiation.",
+        "published_date": "2025-02-04",
+        "patch_released_date": "2025-02-23",
+        "patch_applied": true
+      },
+      {
+        "cve_id": "CVE-2025-12226",
+        "cvss_score": 8.0,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N",
+        "description": "Information disclosure in verbose error responses reveals internal host names.",
+        "published_date": "2025-03-10",
+        "patch_released_date": "2025-03-14",
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0008",
+    "hostname": "lon-web-008",
+    "operating_system": "Ubuntu 22.04 LTS",
+    "ip_address": "10.14.34.233",
+    "internet_facing": false,
+    "environment": "test",
+    "criticality": "Low",
+    "assessment_date": "2025-06-29",
+    "issue_codes": [
+      "UNRESTRICTED_INBOUND",
+      "AV_SIGNATURE_OUTDATED"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2023-86180",
+        "cvss_score": 4.7,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Deserialisation of untrusted data allows arbitrary object instantiation.",
+        "published_date": "2023-07-13",
+        "patch_released_date": "2023-08-15",
+        "patch_applied": true
+      },
+      {
+        "cve_id": "CVE-2024-3757",
+        "cvss_score": 3.5,
+        "cvss_vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:N/A:N",
+        "description": "Remote code execution in the HTTP request parser allows an unauthenticated attacker to execute arbitrary code.",
+        "published_date": "2024-06-18",
+        "patch_released_date": "2024-07-02",
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0009",
+    "hostname": "man-dc-009",
+    "operating_system": "Windows 11 Pro 23H2",
+    "ip_address": "203.0.113.50",
+    "internet_facing": true,
+    "environment": "production",
+    "criticality": "Medium",
+    "assessment_date": "2025-06-29",
+    "issue_codes": [
+      "DEFAULT_CREDENTIALS",
+      "INSECURE_PROTOCOL",
+      "UNRESTRICTED_INBOUND",
+      "UNMANAGED_SERVICE_EXPOSED"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2024-54354",
+        "cvss_score": 3.7,
+        "cvss_vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:N/A:N",
+        "description": "SQL injection in a reporting endpoint allows extraction of database contents.",
+        "published_date": "2024-02-01",
+        "patch_released_date": "2024-02-07",
+        "patch_applied": false
+      },
+      {
+        "cve_id": "CVE-2024-96561",
+        "cvss_score": 4.9,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Use-after-free in the image decoding library triggered by a crafted file.",
+        "published_date": "2024-02-07",
+        "patch_released_date": null,
+        "patch_applied": false
+      },
+      {
+        "cve_id": "CVE-2025-8944",
+        "cvss_score": 8.7,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N",
+        "description": "Heap-based buffer overflow in the TLS handshake routine leads to memory corruption.",
+        "published_date": "2025-02-19",
+        "patch_released_date": "2025-03-12",
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0010",
+    "hostname": "bri-file-010",
+    "operating_system": "Windows Server 2022",
+    "ip_address": "10.27.249.41",
+    "internet_facing": false,
+    "environment": "production",
+    "criticality": "Critical",
+    "assessment_date": "2025-06-28",
+    "issue_codes": [
+      "FLAT_NETWORK"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2023-13833",
+        "cvss_score": 7.5,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N",
+        "description": "Information disclosure in verbose error responses reveals internal host names.",
+        "published_date": "2023-11-13",
+        "patch_released_date": null,
+        "patch_applied": false
+      },
+      {
+        "cve_id": "CVE-2025-99771",
+        "cvss_score": 7.7,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N",
+        "description": "Cross-site scripting in the administrative console allows script injection.",
+        "published_date": "2025-02-23",
+        "patch_released_date": "2025-03-05",
+        "patch_applied": true
+      },
+      {
+        "cve_id": "CVE-2024-8685",
+        "cvss_score": 3.5,
+        "cvss_vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:N/A:N",
+        "description": "Path traversal in the file upload handler exposes files outside the web root.",
+        "published_date": "2024-04-14",
+        "patch_released_date": "2024-04-14",
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0011",
+    "hostname": "lon-print-011",
+    "operating_system": "Ubuntu 20.04 LTS",
+    "ip_address": "10.15.20.160",
+    "internet_facing": false,
+    "environment": "production",
+    "criticality": "Medium",
+    "assessment_date": "2025-06-26",
+    "issue_codes": [
+      "AV_SIGNATURE_OUTDATED"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2023-63493",
+        "cvss_score": 2.4,
+        "cvss_vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:N/A:N",
+        "description": "Information disclosure in verbose error responses reveals internal host names.",
+        "published_date": "2023-10-07",
+        "patch_released_date": "2023-11-09",
+        "patch_applied": true
+      },
+      {
+        "cve_id": "CVE-2024-9981",
+        "cvss_score": 2.5,
+        "cvss_vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:N/A:N",
+        "description": "Privilege escalation via an unquoted service path in the installer.",
+        "published_date": "2024-11-18",
+        "patch_released_date": "2024-12-31",
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0012",
+    "hostname": "gla-db-012",
+    "operating_system": "Windows Server 2022",
+    "ip_address": "10.22.35.227",
+    "internet_facing": false,
+    "environment": "production",
+    "criticality": "Low",
+    "assessment_date": "2025-06-26",
+    "issue_codes": [
+      "INSECURE_PROTOCOL",
+      "FLAT_NETWORK",
+      "NO_EDR_INGESTION"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2024-18154",
+        "cvss_score": 3.6,
+        "cvss_vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:N/A:N",
+        "description": "Heap-based buffer overflow in the TLS handshake routine leads to memory corruption.",
+        "published_date": "2024-04-17",
+        "patch_released_date": "2024-05-06",
+        "patch_applied": true
+      },
+      {
+        "cve_id": "CVE-2023-74792",
+        "cvss_score": 2.1,
+        "cvss_vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:N/A:N",
+        "description": "Information disclosure in verbose error responses reveals internal host names.",
+        "published_date": "2023-08-30",
+        "patch_released_date": "2023-09-03",
+        "patch_applied": true
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0013",
+    "hostname": "lee-jump-013",
+    "operating_system": "Amazon Linux 2023",
+    "ip_address": "10.16.26.25",
+    "internet_facing": false,
+    "environment": "production",
+    "criticality": "Medium",
+    "assessment_date": "2025-06-26",
+    "issue_codes": [
+      "AUTH_SCAN_FAILURE"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2025-18601",
+        "cvss_score": 8.3,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N",
+        "description": "Improper authentication check permits session tokens to be reused after logout.",
+        "published_date": "2025-02-10",
+        "patch_released_date": "2025-02-16",
+        "patch_applied": false
+      },
+      {
+        "cve_id": "CVE-2023-28607",
+        "cvss_score": 3.9,
+        "cvss_vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:N/A:N",
+        "description": "Path traversal in the file upload handler exposes files outside the web root.",
+        "published_date": "2023-09-16",
+        "patch_released_date": "2023-09-29",
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0014",
+    "hostname": "bri-db-014",
+    "operating_system": "Ubuntu 22.04 LTS",
+    "ip_address": "10.2.157.95",
+    "internet_facing": false,
+    "environment": "test",
+    "criticality": "Medium",
+    "assessment_date": "2025-06-30",
+    "issue_codes": [
+      "FLAT_NETWORK",
+      "INSUFFICIENT_SCAN_CREDENTIALS"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2024-73309",
+        "cvss_score": 3.1,
+        "cvss_vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:N/A:N",
+        "description": "Heap-based buffer overflow in the TLS handshake routine leads to memory corruption.",
+        "published_date": "2024-03-05",
+        "patch_released_date": "2024-04-09",
+        "patch_applied": true
+      },
+      {
+        "cve_id": "CVE-2023-20536",
+        "cvss_score": 8.4,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N",
+        "description": "Improper authentication check permits session tokens to be reused after logout.",
+        "published_date": "2023-06-24",
+        "patch_released_date": "2023-07-17",
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-9001",
+    "hostname": "lon-web-901",
+    "operating_system": "Ubuntu 22.04 LTS",
+    "ip_address": "203.0.113.201",
+    "internet_facing": true,
+    "environment": "production",
+    "criticality": "High",
+    "assessment_date": "2025-06-30",
+    "issue_codes": [
+      "PATCH_MISSING"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-24-ABCDE",
+        "cvss_score": 7.5,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N",
+        "description": "Placeholder vulnerability for a deliberately malformed record.",
+        "published_date": "2025-05-21",
+        "patch_released_date": "2025-06-10",
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0015",
+    "hostname": "bri-dc-015",
+    "operating_system": "Windows Server 2016",
+    "ip_address": "10.12.235.91",
+    "internet_facing": false,
+    "environment": "development",
+    "criticality": "High",
+    "assessment_date": "2025-06-29",
+    "issue_codes": [
+      "PATCH_MISSING",
+      "UNRESTRICTED_INBOUND",
+      "NO_EDR_INGESTION"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2023-21257",
+        "cvss_score": 8.6,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N",
+        "description": "Improper authentication check permits session tokens to be reused after logout.",
+        "published_date": "2023-04-24",
+        "patch_released_date": "2023-05-09",
+        "patch_applied": false
+      },
+      {
+        "cve_id": "CVE-2025-24509",
+        "cvss_score": 8.0,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N",
+        "description": "Privilege escalation via an unquoted service path in the installer.",
+        "published_date": "2025-05-05",
+        "patch_released_date": "2025-05-26",
+        "patch_applied": false
+      },
+      {
+        "cve_id": "CVE-2023-33527",
+        "cvss_score": 7.5,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N",
+        "description": "Remote code execution in the HTTP request parser allows an unauthenticated attacker to execute arbitrary code.",
+        "published_date": "2023-05-09",
+        "patch_released_date": "2023-06-22",
+        "patch_applied": true
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0016",
+    "hostname": "lon-app-016",
+    "operating_system": "RHEL 8.9",
+    "ip_address": "203.0.113.154",
+    "internet_facing": true,
+    "environment": "production",
+    "criticality": "High",
+    "assessment_date": "2025-06-29",
+    "issue_codes": [
+      "PATCH_RECORD_ABSENT",
+      "PASSWORD_POLICY_NONCOMPLIANCE"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2025-37585",
+        "cvss_score": 3.9,
+        "cvss_vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:N/A:N",
+        "description": "Information disclosure in verbose error responses reveals internal host names.",
+        "published_date": "2025-03-20",
+        "patch_released_date": null,
+        "patch_applied": false
+      },
+      {
+        "cve_id": "CVE-2025-16118",
+        "cvss_score": 4.3,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Path traversal in the file upload handler exposes files outside the web root.",
+        "published_date": "2025-05-02",
+        "patch_released_date": "2025-05-18",
+        "patch_applied": true
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0017",
+    "hostname": "lon-web-017",
+    "operating_system": "Ubuntu 20.04 LTS",
+    "ip_address": "203.0.113.161",
+    "internet_facing": true,
+    "environment": "production",
+    "criticality": "Critical",
+    "assessment_date": "2025-06-27",
+    "issue_codes": [
+      "PATCH_MISSING",
+      "DEFAULT_CREDENTIALS"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2025-21017",
+        "cvss_score": 9.8,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+        "description": "Remote code execution in an internet-facing service allows an unauthenticated attacker to execute arbitrary code with elevated privileges.",
+        "published_date": "2025-06-06",
+        "patch_released_date": "2025-06-13",
+        "patch_applied": false
+      },
+      {
+        "cve_id": "CVE-2025-51488",
+        "cvss_score": 8.7,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N",
+        "description": "Missing bounds check in the SMB request handler permits out-of-bounds read.",
+        "published_date": "2025-01-30",
+        "patch_released_date": "2025-02-11",
+        "patch_applied": true
+      },
+      {
+        "cve_id": "CVE-2023-71575",
+        "cvss_score": 5.0,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Privilege escalation via an unquoted service path in the installer.",
+        "published_date": "2023-12-13",
+        "patch_released_date": "2024-01-24",
+        "patch_applied": true
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0018",
+    "hostname": "bri-build-018",
+    "operating_system": "Windows Server 2022",
+    "ip_address": "10.0.155.75",
+    "internet_facing": false,
+    "environment": "production",
+    "criticality": "Medium",
+    "assessment_date": "2025-06-25",
+    "issue_codes": [
+      "INSECURE_PROTOCOL",
+      "PASSWORD_POLICY_NONCOMPLIANCE",
+      "FLAT_NETWORK"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2024-73667",
+        "cvss_score": 4.7,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Privilege escalation via an unquoted service path in the installer.",
+        "published_date": "2024-07-28",
+        "patch_released_date": null,
+        "patch_applied": false
+      },
+      {
+        "cve_id": "CVE-2024-89777",
+        "cvss_score": 6.5,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Path traversal in the file upload handler exposes files outside the web root.",
+        "published_date": "2024-05-03",
+        "patch_released_date": "2024-05-14",
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0019",
+    "hostname": "lee-app-019",
+    "operating_system": "Amazon Linux 2023",
+    "ip_address": "10.29.212.228",
+    "internet_facing": false,
+    "environment": "staging",
+    "criticality": "High",
+    "assessment_date": "2025-06-25",
+    "issue_codes": [
+      "INSECURE_PROTOCOL",
+      "EXCESSIVE_PRIVILEGES",
+      "MFA_ABSENT",
+      "FLAT_NETWORK"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2023-97463",
+        "cvss_score": 7.4,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N",
+        "description": "Use-after-free in the image decoding library triggered by a crafted file.",
+        "published_date": "2023-03-03",
+        "patch_released_date": "2023-03-08",
+        "patch_applied": true
+      },
+      {
+        "cve_id": "CVE-2024-13240",
+        "cvss_score": 6.3,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Deserialisation of untrusted data allows arbitrary object instantiation.",
+        "published_date": "2024-06-17",
+        "patch_released_date": "2024-07-02",
+        "patch_applied": false
+      },
+      {
+        "cve_id": "CVE-2024-4201",
+        "cvss_score": 7.5,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N",
+        "description": "Cross-site scripting in the administrative console allows script injection.",
+        "published_date": "2024-12-27",
+        "patch_released_date": null,
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0020",
+    "hostname": "lon-vpn-020",
+    "operating_system": "SUSE Linux Enterprise 15 SP5",
+    "ip_address": "10.14.90.207",
+    "internet_facing": false,
+    "environment": "production",
+    "criticality": "Low",
+    "assessment_date": "2025-06-27",
+    "issue_codes": [
+      "DEFAULT_CREDENTIALS",
+      "STALE_ACCOUNT"
+    ],
+    "vulnerabilities": []
+  },
+  {
+    "asset_id": "AST-0021",
+    "hostname": "lee-jump-021",
+    "operating_system": "Debian 12",
+    "ip_address": "10.40.122.72",
+    "internet_facing": false,
+    "environment": "production",
+    "criticality": "Medium",
+    "assessment_date": "2025-06-29",
+    "issue_codes": [
+      "PASSWORD_POLICY_NONCOMPLIANCE"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2024-88500",
+        "cvss_score": 2.9,
+        "cvss_vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:N/A:N",
+        "description": "Cross-site scripting in the administrative console allows script injection.",
+        "published_date": "2024-02-10",
+        "patch_released_date": "2024-03-16",
+        "patch_applied": false
+      },
+      {
+        "cve_id": "CVE-2023-67162",
+        "cvss_score": 6.2,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Improper authentication check permits session tokens to be reused after logout.",
+        "published_date": "2023-05-25",
+        "patch_released_date": "2023-06-29",
+        "patch_applied": true
+      },
+      {
+        "cve_id": "CVE-2024-59991",
+        "cvss_score": 7.1,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N",
+        "description": "Path traversal in the file upload handler exposes files outside the web root.",
+        "published_date": "2024-01-30",
+        "patch_released_date": "2024-02-14",
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0022",
+    "hostname": "gla-build-022",
+    "operating_system": "Windows Server 2022",
+    "ip_address": "10.29.212.17",
+    "internet_facing": false,
+    "environment": "development",
+    "criticality": "Medium",
+    "assessment_date": "2025-06-28",
+    "issue_codes": [
+      "MFA_ABSENT"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2024-91957",
+        "cvss_score": 3.0,
+        "cvss_vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:N/A:N",
+        "description": "Privilege escalation via an unquoted service path in the installer.",
+        "published_date": "2024-05-02",
+        "patch_released_date": "2024-05-15",
+        "patch_applied": true
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0023",
+    "hostname": "lee-build-023",
+    "operating_system": "Windows 10 Pro 22H2",
+    "ip_address": "10.1.201.153",
+    "internet_facing": false,
+    "environment": "staging",
+    "criticality": "Low",
+    "assessment_date": "2025-06-26",
+    "issue_codes": [
+      "UNRESTRICTED_INBOUND"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2024-40139",
+        "cvss_score": 5.2,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Missing bounds check in the SMB request handler permits out-of-bounds read.",
+        "published_date": "2024-06-01",
+        "patch_released_date": "2024-06-27",
+        "patch_applied": true
+      },
+      {
+        "cve_id": "CVE-2023-29906",
+        "cvss_score": 5.7,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Remote code execution in the HTTP request parser allows an unauthenticated attacker to execute arbitrary code.",
+        "published_date": "2023-09-18",
+        "patch_released_date": "2023-10-05",
+        "patch_applied": true
+      },
+      {
+        "cve_id": "CVE-2023-90016",
+        "cvss_score": 4.6,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Improper authentication check permits session tokens to be reused after logout.",
+        "published_date": "2023-07-13",
+        "patch_released_date": "2023-07-23",
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0024",
+    "hostname": "man-db-024",
+    "operating_system": "Amazon Linux 2023",
+    "ip_address": "203.0.113.123",
+    "internet_facing": true,
+    "environment": "production",
+    "criticality": "Critical",
+    "assessment_date": "2025-06-27",
+    "issue_codes": [
+      "PATCH_MISSING",
+      "DEFAULT_CREDENTIALS",
+      "EXCESSIVE_PRIVILEGES",
+      "UNMANAGED_SERVICE_EXPOSED"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2024-43840",
+        "cvss_score": 4.2,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Privilege escalation via an unquoted service path in the installer.",
+        "published_date": "2024-02-18",
+        "patch_released_date": "2024-03-13",
+        "patch_applied": true
+      },
+      {
+        "cve_id": "CVE-2025-62644",
+        "cvss_score": 3.7,
+        "cvss_vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:N/A:N",
+        "description": "Information disclosure in verbose error responses reveals internal host names.",
+        "published_date": "2025-03-06",
+        "patch_released_date": null,
+        "patch_applied": false
+      },
+      {
+        "cve_id": "CVE-2024-30389",
+        "cvss_score": 2.4,
+        "cvss_vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:N/A:N",
+        "description": "Remote code execution in the HTTP request parser allows an unauthenticated attacker to execute arbitrary code.",
+        "published_date": "2024-06-04",
+        "patch_released_date": "2024-07-15",
+        "patch_applied": true
+      },
+      {
+        "cve_id": "CVE-2024-3671",
+        "cvss_score": 8.5,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N",
+        "description": "Improper authentication check permits session tokens to be reused after logout.",
+        "published_date": "2024-11-05",
+        "patch_released_date": "2024-12-14",
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0025",
+    "hostname": "man-file-025",
+    "operating_system": "Windows Server 2016",
+    "ip_address": "10.6.13.239",
+    "internet_facing": false,
+    "environment": "staging",
+    "criticality": "Critical",
+    "assessment_date": "2025-06-27",
+    "issue_codes": [
+      "DEFAULT_CREDENTIALS",
+      "UNMANAGED_SERVICE_EXPOSED",
+      "FLAT_NETWORK"
+    ],
+    "vulnerabilities": []
+  },
+  {
+    "asset_id": "AST-0026",
+    "hostname": "lon-mail-026",
+    "operating_system": "RHEL 9.3",
+    "ip_address": "10.34.219.171",
+    "internet_facing": false,
+    "environment": "production",
+    "criticality": "High",
+    "assessment_date": "2025-06-27",
+    "issue_codes": [
+      "PATCH_RECORD_ABSENT",
+      "AV_SIGNATURE_OUTDATED"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2023-40529",
+        "cvss_score": 2.7,
+        "cvss_vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:N/A:N",
+        "description": "Denial of service via unbounded resource allocation in the connection handler.",
+        "published_date": "2023-03-29",
+        "patch_released_date": null,
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0027",
+    "hostname": "lee-vpn-027",
+    "operating_system": "RHEL 9.3",
+    "ip_address": "10.21.14.128",
+    "internet_facing": false,
+    "environment": "production",
+    "criticality": "Medium",
+    "assessment_date": "2025-06-30",
+    "issue_codes": [
+      "PATCH_RECORD_ABSENT",
+      "STALE_ACCOUNT",
+      "PASSWORD_POLICY_NONCOMPLIANCE",
+      "NO_EDR_INGESTION"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2024-24086",
+        "cvss_score": 6.8,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Information disclosure in verbose error responses reveals internal host names.",
+        "published_date": "2024-03-12",
+        "patch_released_date": null,
+        "patch_applied": false
+      },
+      {
+        "cve_id": "CVE-2024-58091",
+        "cvss_score": 7.3,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N",
+        "description": "Deserialisation of untrusted data allows arbitrary object instantiation.",
+        "published_date": "2024-02-10",
+        "patch_released_date": "2024-03-18",
+        "patch_applied": true
+      },
+      {
+        "cve_id": "CVE-2025-37559",
+        "cvss_score": 7.6,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N",
+        "description": "Denial of service via unbounded resource allocation in the connection handler.",
+        "published_date": "2025-03-04",
+        "patch_released_date": "2025-03-19",
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0028",
+    "hostname": "ncl-jump-028",
+    "operating_system": "Windows Server 2016",
+    "ip_address": "10.28.8.25",
+    "internet_facing": false,
+    "environment": "production",
+    "criticality": "High",
+    "assessment_date": "2025-06-28",
+    "issue_codes": [
+      "PATCH_MISSING",
+      "UNRESTRICTED_INBOUND",
+      "AUTH_SCAN_FAILURE"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2023-54271",
+        "cvss_score": 2.6,
+        "cvss_vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:N/A:N",
+        "description": "Use-after-free in the image decoding library triggered by a crafted file.",
+        "published_date": "2023-05-23",
+        "patch_released_date": "2023-06-07",
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0029",
+    "hostname": "man-dc-029",
+    "operating_system": "SUSE Linux Enterprise 15 SP5",
+    "ip_address": "10.13.247.72",
+    "internet_facing": false,
+    "environment": "staging",
+    "criticality": "High",
+    "assessment_date": "2025-06-28",
+    "issue_codes": [
+      "MFA_ABSENT",
+      "UNRESTRICTED_INBOUND",
+      "INSUFFICIENT_SCAN_CREDENTIALS"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2023-73140",
+        "cvss_score": 4.9,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Path traversal in the file upload handler exposes files outside the web root.",
+        "published_date": "2023-04-27",
+        "patch_released_date": "2023-06-10",
+        "patch_applied": true
+      },
+      {
+        "cve_id": "CVE-2025-95540",
+        "cvss_score": 3.7,
+        "cvss_vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:N/A:N",
+        "description": "Missing bounds check in the SMB request handler permits out-of-bounds read.",
+        "published_date": "2025-01-26",
+        "patch_released_date": "2025-02-02",
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-9002",
+    "hostname": "man-db-902",
+    "operating_system": "Windows Server 2019",
+    "ip_address": "10.20.4.90",
+    "internet_facing": false,
+    "environment": "production",
+    "criticality": "Critical",
+    "assessment_date": "2025-06-30",
+    "issue_codes": [
+      "PATCH_MISSING"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2024-31210",
+        "cvss_score": 11.5,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N",
+        "description": "Placeholder vulnerability for a deliberately malformed record.",
+        "published_date": "2025-05-21",
+        "patch_released_date": "2025-06-10",
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0030",
+    "hostname": "man-jump-030",
+    "operating_system": "Windows Server 2016",
+    "ip_address": "10.6.6.148",
+    "internet_facing": false,
+    "environment": "production",
+    "criticality": "Medium",
+    "assessment_date": "2025-06-26",
+    "issue_codes": [
+      "PATCH_MISSING"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2024-24519",
+        "cvss_score": 4.0,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Path traversal in the file upload handler exposes files outside the web root.",
+        "published_date": "2024-05-23",
+        "patch_released_date": "2024-07-07",
+        "patch_applied": true
+      },
+      {
+        "cve_id": "CVE-2025-73529",
+        "cvss_score": 2.3,
+        "cvss_vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:N/A:N",
+        "description": "Missing bounds check in the SMB request handler permits out-of-bounds read.",
+        "published_date": "2025-04-02",
+        "patch_released_date": "2025-04-20",
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0031",
+    "hostname": "lon-vpn-031",
+    "operating_system": "Amazon Linux 2023",
+    "ip_address": "10.31.37.149",
+    "internet_facing": false,
+    "environment": "staging",
+    "criticality": "Low",
+    "assessment_date": "2025-06-29",
+    "issue_codes": [
+      "PATCH_RECORD_ABSENT",
+      "MFA_ABSENT",
+      "AUTH_SCAN_FAILURE"
+    ],
+    "vulnerabilities": []
+  },
+  {
+    "asset_id": "AST-0032",
+    "hostname": "man-web-032",
+    "operating_system": "Ubuntu 20.04 LTS",
+    "ip_address": "203.0.113.117",
+    "internet_facing": true,
+    "environment": "production",
+    "criticality": "Critical",
+    "assessment_date": "2025-06-26",
+    "issue_codes": [
+      "PATCH_MISSING",
+      "DEFAULT_CREDENTIALS",
+      "UNMANAGED_SERVICE_EXPOSED",
+      "AUTH_SCAN_FAILURE"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2025-21032",
+        "cvss_score": 9.8,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+        "description": "Remote code execution in an internet-facing service allows an unauthenticated attacker to execute arbitrary code with elevated privileges.",
+        "published_date": "2025-06-05",
+        "patch_released_date": "2025-06-12",
+        "patch_applied": false
+      },
+      {
+        "cve_id": "CVE-2024-16525",
+        "cvss_score": 2.6,
+        "cvss_vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:N/A:N",
+        "description": "Denial of service via unbounded resource allocation in the connection handler.",
+        "published_date": "2024-09-15",
+        "patch_released_date": "2024-10-11",
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0033",
+    "hostname": "man-dc-033",
+    "operating_system": "Windows Server 2022",
+    "ip_address": "10.16.41.42",
+    "internet_facing": false,
+    "environment": "production",
+    "criticality": "Low",
+    "assessment_date": "2025-06-27",
+    "issue_codes": [
+      "INSECURE_PROTOCOL"
+    ],
+    "vulnerabilities": []
+  },
+  {
+    "asset_id": "AST-0034",
+    "hostname": "lon-db-034",
+    "operating_system": "Ubuntu 20.04 LTS",
+    "ip_address": "10.19.147.114",
+    "internet_facing": false,
+    "environment": "production",
+    "criticality": "Medium",
+    "assessment_date": "2025-06-30",
+    "issue_codes": [
+      "PATCH_MISSING",
+      "INSECURE_PROTOCOL",
+      "EXCESSIVE_PRIVILEGES"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2023-60510",
+        "cvss_score": 6.8,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Deserialisation of untrusted data allows arbitrary object instantiation.",
+        "published_date": "2023-06-12",
+        "patch_released_date": null,
+        "patch_applied": false
+      },
+      {
+        "cve_id": "CVE-2023-82927",
+        "cvss_score": 8.3,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N",
+        "description": "Information disclosure in verbose error responses reveals internal host names.",
+        "published_date": "2023-03-17",
+        "patch_released_date": "2023-03-29",
+        "patch_applied": true
+      },
+      {
+        "cve_id": "CVE-2024-35816",
+        "cvss_score": 3.5,
+        "cvss_vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:N/A:N",
+        "description": "Heap-based buffer overflow in the TLS handshake routine leads to memory corruption.",
+        "published_date": "2024-12-30",
+        "patch_released_date": "2025-01-08",
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0035",
+    "hostname": "bri-mail-035",
+    "operating_system": "Ubuntu 20.04 LTS",
+    "ip_address": "10.38.128.8",
+    "internet_facing": false,
+    "environment": "production",
+    "criticality": "High",
+    "assessment_date": "2025-06-27",
+    "issue_codes": [
+      "PATCH_RECORD_ABSENT",
+      "STALE_ACCOUNT",
+      "MFA_ABSENT",
+      "UNMANAGED_SERVICE_EXPOSED"
+    ],
+    "vulnerabilities": []
+  },
+  {
+    "asset_id": "AST-0036",
+    "hostname": "gla-vpn-036",
+    "operating_system": "Ubuntu 20.04 LTS",
+    "ip_address": "10.21.164.173",
+    "internet_facing": false,
+    "environment": "test",
+    "criticality": "Medium",
+    "assessment_date": "2025-06-26",
+    "issue_codes": [
+      "PASSWORD_POLICY_NONCOMPLIANCE"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2023-23962",
+        "cvss_score": 5.9,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Path traversal in the file upload handler exposes files outside the web root.",
+        "published_date": "2023-04-07",
+        "patch_released_date": "2023-05-18",
+        "patch_applied": true
+      },
+      {
+        "cve_id": "CVE-2023-58132",
+        "cvss_score": 3.2,
+        "cvss_vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:N/A:N",
+        "description": "Cross-site scripting in the administrative console allows script injection.",
+        "published_date": "2023-10-06",
+        "patch_released_date": "2023-11-06",
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0037",
+    "hostname": "bri-app-037",
+    "operating_system": "Ubuntu 20.04 LTS",
+    "ip_address": "10.20.129.84",
+    "internet_facing": false,
+    "environment": "dr",
+    "criticality": "Medium",
+    "assessment_date": "2025-06-25",
+    "issue_codes": [
+      "MFA_ABSENT",
+      "UNRESTRICTED_INBOUND",
+      "NO_EDR_INGESTION",
+      "AUTH_SCAN_FAILURE"
+    ],
+    "vulnerabilities": []
+  },
+  {
+    "asset_id": "AST-0038",
+    "hostname": "lon-build-038",
+    "operating_system": "Ubuntu 20.04 LTS",
+    "ip_address": "10.26.47.59",
+    "internet_facing": false,
+    "environment": "production",
+    "criticality": "Low",
+    "assessment_date": "2025-06-26",
+    "issue_codes": [
+      "UNRESTRICTED_INBOUND"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2024-68952",
+        "cvss_score": 4.8,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Remote code execution in the HTTP request parser allows an unauthenticated attacker to execute arbitrary code.",
+        "published_date": "2024-11-16",
+        "patch_released_date": "2024-12-17",
+        "patch_applied": false
+      },
+      {
+        "cve_id": "CVE-2023-18172",
+        "cvss_score": 3.4,
+        "cvss_vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:N/A:N",
+        "description": "Cross-site scripting in the administrative console allows script injection.",
+        "published_date": "2023-11-12",
+        "patch_released_date": "2023-12-10",
+        "patch_applied": false
+      },
+      {
+        "cve_id": "CVE-2023-80806",
+        "cvss_score": 2.8,
+        "cvss_vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:N/A:N",
+        "description": "Information disclosure in verbose error responses reveals internal host names.",
+        "published_date": "2023-08-21",
+        "patch_released_date": "2023-10-05",
+        "patch_applied": true
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0039",
+    "hostname": "gla-build-039",
+    "operating_system": "SUSE Linux Enterprise 15 SP5",
+    "ip_address": "10.17.1.74",
+    "internet_facing": false,
+    "environment": "production",
+    "criticality": "Medium",
+    "assessment_date": "2025-06-29",
+    "issue_codes": [
+      "UNRESTRICTED_INBOUND",
+      "UNMANAGED_SERVICE_EXPOSED",
+      "AV_SIGNATURE_OUTDATED"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2024-62894",
+        "cvss_score": 4.8,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Deserialisation of untrusted data allows arbitrary object instantiation.",
+        "published_date": "2024-01-22",
+        "patch_released_date": "2024-02-26",
+        "patch_applied": true
+      },
+      {
+        "cve_id": "CVE-2023-98818",
+        "cvss_score": 8.3,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N",
+        "description": "Privilege escalation via an unquoted service path in the installer.",
+        "published_date": "2023-12-27",
+        "patch_released_date": "2023-12-31",
+        "patch_applied": true
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0040",
+    "hostname": "man-jump-040",
+    "operating_system": "Windows 10 Pro 22H2",
+    "ip_address": "10.2.64.130",
+    "internet_facing": false,
+    "environment": "production",
+    "criticality": "Low",
+    "assessment_date": "2025-06-25",
+    "issue_codes": [
+      "MFA_ABSENT",
+      "FLAT_NETWORK"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2023-72228",
+        "cvss_score": 4.3,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Missing bounds check in the SMB request handler permits out-of-bounds read.",
+        "published_date": "2023-11-08",
+        "patch_released_date": "2023-11-28",
+        "patch_applied": false
+      },
+      {
+        "cve_id": "CVE-2024-31613",
+        "cvss_score": 3.6,
+        "cvss_vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:N/A:N",
+        "description": "Missing bounds check in the SMB request handler permits out-of-bounds read.",
+        "published_date": "2024-04-29",
+        "patch_released_date": "2024-05-25",
+        "patch_applied": true
+      },
+      {
+        "cve_id": "CVE-2023-50968",
+        "cvss_score": 5.2,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Use-after-free in the image decoding library triggered by a crafted file.",
+        "published_date": "2023-02-16",
+        "patch_released_date": "2023-03-30",
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0041",
+    "hostname": "ncl-file-041",
+    "operating_system": "SUSE Linux Enterprise 15 SP5",
+    "ip_address": "203.0.113.60",
+    "internet_facing": true,
+    "environment": "production",
+    "criticality": "Critical",
+    "assessment_date": "2025-06-27",
+    "issue_codes": [
+      "PATCH_MISSING",
+      "DEFAULT_CREDENTIALS",
+      "AV_SIGNATURE_OUTDATED"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2024-10807",
+        "cvss_score": 7.9,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N",
+        "description": "Missing bounds check in the SMB request handler permits out-of-bounds read.",
+        "published_date": "2024-12-21",
+        "patch_released_date": "2025-01-06",
+        "patch_applied": true
+      },
+      {
+        "cve_id": "CVE-2025-44065",
+        "cvss_score": 4.7,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "SQL injection in a reporting endpoint allows extraction of database contents.",
+        "published_date": "2025-03-07",
+        "patch_released_date": "2025-04-10",
+        "patch_applied": true
+      },
+      {
+        "cve_id": "CVE-2023-64956",
+        "cvss_score": 6.3,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Deserialisation of untrusted data allows arbitrary object instantiation.",
+        "published_date": "2023-04-12",
+        "patch_released_date": "2023-04-14",
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0042",
+    "hostname": "lee-dc-042",
+    "operating_system": "Debian 12",
+    "ip_address": "10.31.73.61",
+    "internet_facing": false,
+    "environment": "staging",
+    "criticality": "Medium",
+    "assessment_date": "2025-06-25",
+    "issue_codes": [
+      "NO_EDR_INGESTION"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2024-4794",
+        "cvss_score": 3.1,
+        "cvss_vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:N/A:N",
+        "description": "Remote code execution in the HTTP request parser allows an unauthenticated attacker to execute arbitrary code.",
+        "published_date": "2024-07-24",
+        "patch_released_date": null,
+        "patch_applied": false
+      },
+      {
+        "cve_id": "CVE-2024-57450",
+        "cvss_score": 4.0,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Information disclosure in verbose error responses reveals internal host names.",
+        "published_date": "2024-05-08",
+        "patch_released_date": null,
+        "patch_applied": false
+      },
+      {
+        "cve_id": "CVE-2023-24600",
+        "cvss_score": 4.8,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Privilege escalation via an unquoted service path in the installer.",
+        "published_date": "2023-06-28",
+        "patch_released_date": "2023-07-03",
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0043",
+    "hostname": "gla-dc-043",
+    "operating_system": "Debian 12",
+    "ip_address": "203.0.113.100",
+    "internet_facing": true,
+    "environment": "production",
+    "criticality": "Medium",
+    "assessment_date": "2025-06-25",
+    "issue_codes": [
+      "EXCESSIVE_PRIVILEGES",
+      "FLAT_NETWORK",
+      "AUTH_SCAN_FAILURE",
+      "INSUFFICIENT_SCAN_CREDENTIALS"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2024-78014",
+        "cvss_score": 2.5,
+        "cvss_vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:N/A:N",
+        "description": "Cross-site scripting in the administrative console allows script injection.",
+        "published_date": "2024-06-07",
+        "patch_released_date": "2024-07-04",
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0044",
+    "hostname": "lon-web-044",
+    "operating_system": "Windows 10 Pro 22H2",
+    "ip_address": "10.19.225.10",
+    "internet_facing": false,
+    "environment": "production",
+    "criticality": "Low",
+    "assessment_date": "2025-06-28",
+    "issue_codes": [
+      "PATCH_MISSING",
+      "AUTH_SCAN_FAILURE",
+      "INSUFFICIENT_SCAN_CREDENTIALS"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2023-90889",
+        "cvss_score": 3.9,
+        "cvss_vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:N/A:N",
+        "description": "Missing bounds check in the SMB request handler permits out-of-bounds read.",
+        "published_date": "2023-10-28",
+        "patch_released_date": "2023-10-31",
+        "patch_applied": false
+      },
+      {
+        "cve_id": "CVE-2024-31162",
+        "cvss_score": 5.4,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Deserialisation of untrusted data allows arbitrary object instantiation.",
+        "published_date": "2024-08-09",
+        "patch_released_date": "2024-08-31",
+        "patch_applied": true
+      },
+      {
+        "cve_id": "CVE-2023-95493",
+        "cvss_score": 6.2,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Use-after-free in the image decoding library triggered by a crafted file.",
+        "published_date": "2023-07-05",
+        "patch_released_date": "2023-08-17",
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-9003",
+    "hostname": "gla-app-903",
+    "operating_system": "RHEL 9.3",
+    "ip_address": "10.11.7.35",
+    "internet_facing": false,
+    "environment": "staging",
+    "criticality": "Medium",
+    "assessment_date": "2025-06-30",
+    "issue_codes": [
+      "PATCH_MISSING",
+      "ROGUE_ISSUE_CODE"
+    ],
+    "vulnerabilities": []
+  },
+  {
+    "asset_id": "AST-0045",
+    "hostname": "ncl-vpn-045",
+    "operating_system": "RHEL 8.9",
+    "ip_address": "10.35.187.25",
+    "internet_facing": false,
+    "environment": "production",
+    "criticality": "Medium",
+    "assessment_date": "2025-06-28",
+    "issue_codes": [
+      "PATCH_MISSING",
+      "DEFAULT_CREDENTIALS",
+      "INSECURE_PROTOCOL",
+      "INSUFFICIENT_SCAN_CREDENTIALS"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2024-22567",
+        "cvss_score": 5.6,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Path traversal in the file upload handler exposes files outside the web root.",
+        "published_date": "2024-08-23",
+        "patch_released_date": "2024-09-22",
+        "patch_applied": false
+      },
+      {
+        "cve_id": "CVE-2024-16095",
+        "cvss_score": 7.1,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N",
+        "description": "Deserialisation of untrusted data allows arbitrary object instantiation.",
+        "published_date": "2024-06-17",
+        "patch_released_date": "2024-06-21",
+        "patch_applied": true
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0046",
+    "hostname": "gla-vpn-046",
+    "operating_system": "Ubuntu 22.04 LTS",
+    "ip_address": "10.7.71.13",
+    "internet_facing": false,
+    "environment": "production",
+    "criticality": "Medium",
+    "assessment_date": "2025-06-27",
+    "issue_codes": [
+      "PATCH_RECORD_ABSENT",
+      "PASSWORD_POLICY_NONCOMPLIANCE",
+      "UNMANAGED_SERVICE_EXPOSED"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2024-62797",
+        "cvss_score": 2.7,
+        "cvss_vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:N/A:N",
+        "description": "Information disclosure in verbose error responses reveals internal host names.",
+        "published_date": "2024-10-01",
+        "patch_released_date": null,
+        "patch_applied": false
+      },
+      {
+        "cve_id": "CVE-2023-30015",
+        "cvss_score": 4.2,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Missing bounds check in the SMB request handler permits out-of-bounds read.",
+        "published_date": "2023-09-12",
+        "patch_released_date": "2023-10-22",
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0047",
+    "hostname": "lee-web-047",
+    "operating_system": "Ubuntu 22.04 LTS",
+    "ip_address": "203.0.113.101",
+    "internet_facing": true,
+    "environment": "production",
+    "criticality": "Critical",
+    "assessment_date": "2025-06-30",
+    "issue_codes": [
+      "PATCH_MISSING",
+      "DEFAULT_CREDENTIALS",
+      "FLAT_NETWORK",
+      "AV_SIGNATURE_OUTDATED"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2025-21047",
+        "cvss_score": 9.8,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+        "description": "Remote code execution in an internet-facing service allows an unauthenticated attacker to execute arbitrary code with elevated privileges.",
+        "published_date": "2025-06-09",
+        "patch_released_date": "2025-06-16",
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0048",
+    "hostname": "lon-mail-048",
+    "operating_system": "Windows Server 2022",
+    "ip_address": "10.13.227.115",
+    "internet_facing": false,
+    "environment": "test",
+    "criticality": "Low",
+    "assessment_date": "2025-06-25",
+    "issue_codes": [
+      "INSECURE_PROTOCOL",
+      "UNMANAGED_SERVICE_EXPOSED",
+      "AV_SIGNATURE_OUTDATED",
+      "AUTH_SCAN_FAILURE"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2023-13978",
+        "cvss_score": 8.0,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N",
+        "description": "Path traversal in the file upload handler exposes files outside the web root.",
+        "published_date": "2023-07-26",
+        "patch_released_date": "2023-09-03",
+        "patch_applied": true
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0049",
+    "hostname": "lee-dc-049",
+    "operating_system": "Windows Server 2022",
+    "ip_address": "10.37.110.210",
+    "internet_facing": false,
+    "environment": "production",
+    "criticality": "Low",
+    "assessment_date": "2025-06-25",
+    "issue_codes": [
+      "PATCH_MISSING",
+      "EXCESSIVE_PRIVILEGES",
+      "PASSWORD_POLICY_NONCOMPLIANCE"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2025-60600",
+        "cvss_score": 3.3,
+        "cvss_vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:N/A:N",
+        "description": "Deserialisation of untrusted data allows arbitrary object instantiation.",
+        "published_date": "2025-01-21",
+        "patch_released_date": null,
+        "patch_applied": false
+      },
+      {
+        "cve_id": "CVE-2023-3799",
+        "cvss_score": 6.4,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "SQL injection in a reporting endpoint allows extraction of database contents.",
+        "published_date": "2023-09-23",
+        "patch_released_date": null,
+        "patch_applied": false
+      },
+      {
+        "cve_id": "CVE-2025-75000",
+        "cvss_score": 3.7,
+        "cvss_vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:N/A:N",
+        "description": "Heap-based buffer overflow in the TLS handshake routine leads to memory corruption.",
+        "published_date": "2025-01-18",
+        "patch_released_date": "2025-01-31",
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0050",
+    "hostname": "lon-app-050",
+    "operating_system": "Debian 12",
+    "ip_address": "203.0.113.123",
+    "internet_facing": true,
+    "environment": "development",
+    "criticality": "Medium",
+    "assessment_date": "2025-06-26",
+    "issue_codes": [
+      "DEFAULT_CREDENTIALS",
+      "STALE_ACCOUNT"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2025-87646",
+        "cvss_score": 7.4,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N",
+        "description": "Deserialisation of untrusted data allows arbitrary object instantiation.",
+        "published_date": "2025-02-04",
+        "patch_released_date": "2025-02-12",
+        "patch_applied": true
+      },
+      {
+        "cve_id": "CVE-2025-23838",
+        "cvss_score": 6.0,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Information disclosure in verbose error responses reveals internal host names.",
+        "published_date": "2025-05-11",
+        "patch_released_date": "2025-05-19",
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0051",
+    "hostname": "ncl-build-051",
+    "operating_system": "Ubuntu 22.04 LTS",
+    "ip_address": "10.19.234.166",
+    "internet_facing": false,
+    "environment": "production",
+    "criticality": "Medium",
+    "assessment_date": "2025-06-30",
+    "issue_codes": [
+      "PASSWORD_POLICY_NONCOMPLIANCE",
+      "UNMANAGED_SERVICE_EXPOSED"
+    ],
+    "vulnerabilities": []
+  },
+  {
+    "asset_id": "AST-0052",
+    "hostname": "ncl-build-052",
+    "operating_system": "Windows Server 2022",
+    "ip_address": "10.13.220.117",
+    "internet_facing": false,
+    "environment": "production",
+    "criticality": "High",
+    "assessment_date": "2025-06-27",
+    "issue_codes": [
+      "MFA_ABSENT"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2024-10632",
+        "cvss_score": 6.8,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Heap-based buffer overflow in the TLS handshake routine leads to memory corruption.",
+        "published_date": "2024-02-29",
+        "patch_released_date": "2024-03-20",
+        "patch_applied": false
+      },
+      {
+        "cve_id": "CVE-2023-83978",
+        "cvss_score": 2.9,
+        "cvss_vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:N/A:N",
+        "description": "Denial of service via unbounded resource allocation in the connection handler.",
+        "published_date": "2023-08-28",
+        "patch_released_date": "2023-10-12",
+        "patch_applied": true
+      },
+      {
+        "cve_id": "CVE-2024-67263",
+        "cvss_score": 5.6,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Heap-based buffer overflow in the TLS handshake routine leads to memory corruption.",
+        "published_date": "2024-02-19",
+        "patch_released_date": "2024-02-25",
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0053",
+    "hostname": "ncl-mail-053",
+    "operating_system": "Windows 11 Pro 23H2",
+    "ip_address": "10.8.30.152",
+    "internet_facing": false,
+    "environment": "staging",
+    "criticality": "High",
+    "assessment_date": "2025-06-27",
+    "issue_codes": [
+      "UNRESTRICTED_INBOUND"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2023-34408",
+        "cvss_score": 4.9,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Cross-site scripting in the administrative console allows script injection.",
+        "published_date": "2023-07-17",
+        "patch_released_date": "2023-07-26",
+        "patch_applied": false
+      },
+      {
+        "cve_id": "CVE-2023-12188",
+        "cvss_score": 2.5,
+        "cvss_vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:N/A:N",
+        "description": "Heap-based buffer overflow in the TLS handshake routine leads to memory corruption.",
+        "published_date": "2023-01-28",
+        "patch_released_date": null,
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0054",
+    "hostname": "lee-build-054",
+    "operating_system": "Windows Server 2019",
+    "ip_address": "10.1.136.9",
+    "internet_facing": false,
+    "environment": "production",
+    "criticality": "High",
+    "assessment_date": "2025-06-27",
+    "issue_codes": [
+      "PATCH_MISSING",
+      "UNMANAGED_SERVICE_EXPOSED",
+      "AV_SIGNATURE_OUTDATED",
+      "AUTH_SCAN_FAILURE"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2024-14579",
+        "cvss_score": 6.1,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Cross-site scripting in the administrative console allows script injection.",
+        "published_date": "2024-06-02",
+        "patch_released_date": "2024-06-15",
+        "patch_applied": true
+      },
+      {
+        "cve_id": "CVE-2025-46890",
+        "cvss_score": 3.5,
+        "cvss_vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:N/A:N",
+        "description": "Path traversal in the file upload handler exposes files outside the web root.",
+        "published_date": "2025-02-07",
+        "patch_released_date": "2025-03-02",
+        "patch_applied": true
+      },
+      {
+        "cve_id": "CVE-2023-57244",
+        "cvss_score": 5.9,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Denial of service via unbounded resource allocation in the connection handler.",
+        "published_date": "2023-02-22",
+        "patch_released_date": "2023-03-29",
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0055",
+    "hostname": "lon-app-055",
+    "operating_system": "RHEL 8.9",
+    "ip_address": "10.33.110.98",
+    "internet_facing": false,
+    "environment": "production",
+    "criticality": "Low",
+    "assessment_date": "2025-06-28",
+    "issue_codes": [
+      "FLAT_NETWORK",
+      "AUTH_SCAN_FAILURE"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2024-10120",
+        "cvss_score": 5.9,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Use-after-free in the image decoding library triggered by a crafted file.",
+        "published_date": "2024-04-14",
+        "patch_released_date": null,
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0056",
+    "hostname": "man-db-056",
+    "operating_system": "Ubuntu 20.04 LTS",
+    "ip_address": "10.39.25.174",
+    "internet_facing": false,
+    "environment": "production",
+    "criticality": "High",
+    "assessment_date": "2025-06-28",
+    "issue_codes": [
+      "AV_SIGNATURE_OUTDATED"
+    ],
+    "vulnerabilities": []
+  },
+  {
+    "asset_id": "AST-0057",
+    "hostname": "gla-vpn-057",
+    "operating_system": "Amazon Linux 2023",
+    "ip_address": "10.7.145.175",
+    "internet_facing": false,
+    "environment": "staging",
+    "criticality": "Medium",
+    "assessment_date": "2025-06-27",
+    "issue_codes": [
+      "INSECURE_PROTOCOL",
+      "EXCESSIVE_PRIVILEGES",
+      "NO_EDR_INGESTION"
+    ],
+    "vulnerabilities": []
+  },
+  {
+    "asset_id": "AST-0058",
+    "hostname": "lee-dc-058",
+    "operating_system": "Windows 11 Pro 23H2",
+    "ip_address": "203.0.113.130",
+    "internet_facing": true,
+    "environment": "development",
+    "criticality": "High",
+    "assessment_date": "2025-06-28",
+    "issue_codes": [
+      "PATCH_MISSING",
+      "UNMANAGED_SERVICE_EXPOSED",
+      "AUTH_SCAN_FAILURE"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2024-18987",
+        "cvss_score": 4.0,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Remote code execution in the HTTP request parser allows an unauthenticated attacker to execute arbitrary code.",
+        "published_date": "2024-10-25",
+        "patch_released_date": "2024-11-12",
+        "patch_applied": true
+      },
+      {
+        "cve_id": "CVE-2024-24028",
+        "cvss_score": 5.4,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Privilege escalation via an unquoted service path in the installer.",
+        "published_date": "2024-03-15",
+        "patch_released_date": "2024-03-23",
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0059",
+    "hostname": "man-vpn-059",
+    "operating_system": "Ubuntu 20.04 LTS",
+    "ip_address": "10.37.205.136",
+    "internet_facing": false,
+    "environment": "production",
+    "criticality": "Medium",
+    "assessment_date": "2025-06-30",
+    "issue_codes": [
+      "INSUFFICIENT_SCAN_CREDENTIALS"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2025-42033",
+        "cvss_score": 2.1,
+        "cvss_vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:N/A:N",
+        "description": "Use-after-free in the image decoding library triggered by a crafted file.",
+        "published_date": "2025-03-13",
+        "patch_released_date": "2025-04-18",
+        "patch_applied": true
+      },
+      {
+        "cve_id": "CVE-2025-54088",
+        "cvss_score": 4.8,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "SQL injection in a reporting endpoint allows extraction of database contents.",
+        "published_date": "2025-02-03",
+        "patch_released_date": null,
+        "patch_applied": false
+      },
+      {
+        "cve_id": "CVE-2023-61305",
+        "cvss_score": 3.2,
+        "cvss_vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:N/A:N",
+        "description": "Heap-based buffer overflow in the TLS handshake routine leads to memory corruption.",
+        "published_date": "2023-09-07",
+        "patch_released_date": "2023-09-30",
+        "patch_applied": true
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-9004",
+    "operating_system": "Debian 12",
+    "ip_address": "10.12.9.44",
+    "internet_facing": false,
+    "environment": "development",
+    "criticality": "Low",
+    "assessment_date": "2025-06-30",
+    "issue_codes": [
+      "STALE_ACCOUNT"
+    ],
+    "vulnerabilities": []
+  },
+  {
+    "asset_id": "AST-0060",
+    "hostname": "ncl-db-060",
+    "operating_system": "Ubuntu 20.04 LTS",
+    "ip_address": "203.0.113.62",
+    "internet_facing": true,
+    "environment": "production",
+    "criticality": "Low",
+    "assessment_date": "2025-06-28",
+    "issue_codes": [
+      "PATCH_MISSING",
+      "PATCH_RECORD_ABSENT"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2024-46793",
+        "cvss_score": 5.6,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Missing bounds check in the SMB request handler permits out-of-bounds read.",
+        "published_date": "2024-11-12",
+        "patch_released_date": "2024-12-04",
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0061",
+    "hostname": "ncl-print-061",
+    "operating_system": "Amazon Linux 2023",
+    "ip_address": "203.0.113.166",
+    "internet_facing": true,
+    "environment": "dr",
+    "criticality": "Medium",
+    "assessment_date": "2025-06-26",
+    "issue_codes": [
+      "PATCH_RECORD_ABSENT"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2023-65764",
+        "cvss_score": 8.5,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N",
+        "description": "Cross-site scripting in the administrative console allows script injection.",
+        "published_date": "2023-08-23",
+        "patch_released_date": null,
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0062",
+    "hostname": "lon-web-062",
+    "operating_system": "Ubuntu 20.04 LTS",
+    "ip_address": "203.0.113.131",
+    "internet_facing": true,
+    "environment": "production",
+    "criticality": "High",
+    "assessment_date": "2025-06-25",
+    "issue_codes": [
+      "PATCH_MISSING",
+      "DEFAULT_CREDENTIALS",
+      "MFA_ABSENT",
+      "INSUFFICIENT_SCAN_CREDENTIALS"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2025-21062",
+        "cvss_score": 9.8,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+        "description": "Remote code execution in an internet-facing service allows an unauthenticated attacker to execute arbitrary code with elevated privileges.",
+        "published_date": "2025-06-04",
+        "patch_released_date": "2025-06-11",
+        "patch_applied": false
+      },
+      {
+        "cve_id": "CVE-2025-62462",
+        "cvss_score": 3.0,
+        "cvss_vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:N/A:N",
+        "description": "Denial of service via unbounded resource allocation in the connection handler.",
+        "published_date": "2025-03-18",
+        "patch_released_date": "2025-04-06",
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0063",
+    "hostname": "lee-print-063",
+    "operating_system": "RHEL 8.9",
+    "ip_address": "203.0.113.131",
+    "internet_facing": true,
+    "environment": "production",
+    "criticality": "Medium",
+    "assessment_date": "2025-06-30",
+    "issue_codes": [
+      "PATCH_RECORD_ABSENT",
+      "INSECURE_PROTOCOL",
+      "FLAT_NETWORK"
+    ],
+    "vulnerabilities": []
+  },
+  {
+    "asset_id": "AST-0064",
+    "hostname": "ncl-app-064",
+    "operating_system": "Windows Server 2022",
+    "ip_address": "10.32.88.12",
+    "internet_facing": false,
+    "environment": "development",
+    "criticality": "Critical",
+    "assessment_date": "2025-06-25",
+    "issue_codes": [
+      "EXCESSIVE_PRIVILEGES",
+      "UNMANAGED_SERVICE_EXPOSED",
+      "NO_EDR_INGESTION",
+      "INSUFFICIENT_SCAN_CREDENTIALS"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2024-66715",
+        "cvss_score": 4.2,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "SQL injection in a reporting endpoint allows extraction of database contents.",
+        "published_date": "2024-01-25",
+        "patch_released_date": "2024-01-28",
+        "patch_applied": true
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0065",
+    "hostname": "bri-file-065",
+    "operating_system": "Ubuntu 20.04 LTS",
+    "ip_address": "10.16.76.87",
+    "internet_facing": false,
+    "environment": "staging",
+    "criticality": "Low",
+    "assessment_date": "2025-06-26",
+    "issue_codes": [
+      "STALE_ACCOUNT"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2024-54578",
+        "cvss_score": 8.2,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N",
+        "description": "Use-after-free in the image decoding library triggered by a crafted file.",
+        "published_date": "2024-04-26",
+        "patch_released_date": "2024-06-08",
+        "patch_applied": false
+      },
+      {
+        "cve_id": "CVE-2025-44213",
+        "cvss_score": 6.4,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Use-after-free in the image decoding library triggered by a crafted file.",
+        "published_date": "2025-03-21",
+        "patch_released_date": null,
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0066",
+    "hostname": "gla-build-066",
+    "operating_system": "Windows Server 2019",
+    "ip_address": "10.24.168.210",
+    "internet_facing": false,
+    "environment": "staging",
+    "criticality": "High",
+    "assessment_date": "2025-06-28",
+    "issue_codes": [
+      "DEFAULT_CREDENTIALS",
+      "PASSWORD_POLICY_NONCOMPLIANCE",
+      "UNMANAGED_SERVICE_EXPOSED",
+      "AV_SIGNATURE_OUTDATED"
+    ],
+    "vulnerabilities": []
+  },
+  {
+    "asset_id": "AST-0067",
+    "hostname": "man-print-067",
+    "operating_system": "Windows Server 2019",
+    "ip_address": "10.24.78.43",
+    "internet_facing": false,
+    "environment": "development",
+    "criticality": "High",
+    "assessment_date": "2025-06-25",
+    "issue_codes": [
+      "MFA_ABSENT"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2025-48526",
+        "cvss_score": 5.5,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Cross-site scripting in the administrative console allows script injection.",
+        "published_date": "2025-05-08",
+        "patch_released_date": "2025-05-21",
+        "patch_applied": true
+      },
+      {
+        "cve_id": "CVE-2025-21308",
+        "cvss_score": 3.3,
+        "cvss_vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:N/A:N",
+        "description": "Heap-based buffer overflow in the TLS handshake routine leads to memory corruption.",
+        "published_date": "2025-01-06",
+        "patch_released_date": null,
+        "patch_applied": false
+      },
+      {
+        "cve_id": "CVE-2023-97815",
+        "cvss_score": 5.5,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Denial of service via unbounded resource allocation in the connection handler.",
+        "published_date": "2023-11-21",
+        "patch_released_date": "2023-11-23",
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0068",
+    "hostname": "lee-vpn-068",
+    "operating_system": "Windows 10 Pro 22H2",
+    "ip_address": "10.10.102.207",
+    "internet_facing": false,
+    "environment": "production",
+    "criticality": "Medium",
+    "assessment_date": "2025-06-29",
+    "issue_codes": [
+      "UNRESTRICTED_INBOUND"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2023-32133",
+        "cvss_score": 4.5,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Missing bounds check in the SMB request handler permits out-of-bounds read.",
+        "published_date": "2023-05-25",
+        "patch_released_date": "2023-07-03",
+        "patch_applied": true
+      },
+      {
+        "cve_id": "CVE-2024-70993",
+        "cvss_score": 7.3,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N",
+        "description": "Deserialisation of untrusted data allows arbitrary object instantiation.",
+        "published_date": "2024-10-03",
+        "patch_released_date": "2024-11-02",
+        "patch_applied": false
+      },
+      {
+        "cve_id": "CVE-2023-58749",
+        "cvss_score": 4.5,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Information disclosure in verbose error responses reveals internal host names.",
+        "published_date": "2023-10-24",
+        "patch_released_date": "2023-11-11",
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0069",
+    "hostname": "gla-app-069",
+    "operating_system": "Windows 11 Pro 23H2",
+    "ip_address": "10.10.139.117",
+    "internet_facing": false,
+    "environment": "production",
+    "criticality": "Medium",
+    "assessment_date": "2025-06-25",
+    "issue_codes": [
+      "PATCH_RECORD_ABSENT",
+      "UNRESTRICTED_INBOUND",
+      "UNMANAGED_SERVICE_EXPOSED"
+    ],
+    "vulnerabilities": []
+  },
+  {
+    "asset_id": "AST-0070",
+    "hostname": "man-build-070",
+    "operating_system": "Windows Server 2016",
+    "ip_address": "10.38.216.30",
+    "internet_facing": false,
+    "environment": "production",
+    "criticality": "Low",
+    "assessment_date": "2025-06-29",
+    "issue_codes": [
+      "PATCH_MISSING",
+      "FLAT_NETWORK",
+      "INSUFFICIENT_SCAN_CREDENTIALS"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2024-50015",
+        "cvss_score": 2.4,
+        "cvss_vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:N/A:N",
+        "description": "Remote code execution in the HTTP request parser allows an unauthenticated attacker to execute arbitrary code.",
+        "published_date": "2024-01-02",
+        "patch_released_date": "2024-01-07",
+        "patch_applied": true
+      },
+      {
+        "cve_id": "CVE-2025-94677",
+        "cvss_score": 4.2,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Path traversal in the file upload handler exposes files outside the web root.",
+        "published_date": "2025-02-18",
+        "patch_released_date": "2025-02-27",
+        "patch_applied": true
+      },
+      {
+        "cve_id": "CVE-2024-92235",
+        "cvss_score": 8.2,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N",
+        "description": "Denial of service via unbounded resource allocation in the connection handler.",
+        "published_date": "2024-02-02",
+        "patch_released_date": "2024-03-18",
+        "patch_applied": true
+      },
+      {
+        "cve_id": "CVE-2025-3490",
+        "cvss_score": 2.0,
+        "cvss_vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:N/A:N",
+        "description": "Deserialisation of untrusted data allows arbitrary object instantiation.",
+        "published_date": "2025-03-10",
+        "patch_released_date": "2025-03-26",
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0071",
+    "hostname": "ncl-build-071",
+    "operating_system": "Windows Server 2019",
+    "ip_address": "10.36.123.185",
+    "internet_facing": false,
+    "environment": "production",
+    "criticality": "Low",
+    "assessment_date": "2025-06-29",
+    "issue_codes": [
+      "PATCH_RECORD_ABSENT",
+      "MFA_ABSENT",
+      "AV_SIGNATURE_OUTDATED",
+      "INSUFFICIENT_SCAN_CREDENTIALS"
+    ],
+    "vulnerabilities": []
+  },
+  {
+    "asset_id": "AST-0072",
+    "hostname": "lee-mail-072",
+    "operating_system": "Windows 11 Pro 23H2",
+    "ip_address": "203.0.113.19",
+    "internet_facing": true,
+    "environment": "production",
+    "criticality": "High",
+    "assessment_date": "2025-06-28",
+    "issue_codes": [
+      "DEFAULT_CREDENTIALS",
+      "FLAT_NETWORK",
+      "NO_EDR_INGESTION",
+      "AUTH_SCAN_FAILURE"
+    ],
+    "vulnerabilities": []
+  },
+  {
+    "asset_id": "AST-0073",
+    "hostname": "bri-jump-073",
+    "operating_system": "Windows Server 2019",
+    "ip_address": "10.40.93.209",
+    "internet_facing": false,
+    "environment": "production",
+    "criticality": "High",
+    "assessment_date": "2025-06-26",
+    "issue_codes": [
+      "PATCH_MISSING",
+      "MFA_ABSENT",
+      "AUTH_SCAN_FAILURE"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2024-98952",
+        "cvss_score": 8.7,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N",
+        "description": "Heap-based buffer overflow in the TLS handshake routine leads to memory corruption.",
+        "published_date": "2024-09-10",
+        "patch_released_date": null,
+        "patch_applied": false
+      },
+      {
+        "cve_id": "CVE-2023-87127",
+        "cvss_score": 4.3,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "SQL injection in a reporting endpoint allows extraction of database contents.",
+        "published_date": "2023-05-08",
+        "patch_released_date": "2023-06-14",
+        "patch_applied": false
+      },
+      {
+        "cve_id": "CVE-2024-72567",
+        "cvss_score": 2.9,
+        "cvss_vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:N/A:N",
+        "description": "Use-after-free in the image decoding library triggered by a crafted file.",
+        "published_date": "2024-06-01",
+        "patch_released_date": "2024-07-12",
+        "patch_applied": true
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0074",
+    "hostname": "ncl-mail-074",
+    "operating_system": "Ubuntu 20.04 LTS",
+    "ip_address": "203.0.113.71",
+    "internet_facing": true,
+    "environment": "development",
+    "criticality": "Medium",
+    "assessment_date": "2025-06-27",
+    "issue_codes": [
+      "PATCH_MISSING",
+      "INSUFFICIENT_SCAN_CREDENTIALS"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2024-41642",
+        "cvss_score": 8.0,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N",
+        "description": "Remote code execution in the HTTP request parser allows an unauthenticated attacker to execute arbitrary code.",
+        "published_date": "2024-07-09",
+        "patch_released_date": "2024-08-12",
+        "patch_applied": true
+      },
+      {
+        "cve_id": "CVE-2024-38501",
+        "cvss_score": 7.1,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N",
+        "description": "Remote code execution in the HTTP request parser allows an unauthenticated attacker to execute arbitrary code.",
+        "published_date": "2024-11-14",
+        "patch_released_date": "2024-12-06",
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-9005",
+    "hostname": "bri-file-905",
+    "operating_system": "Windows Server 2022",
+    "ip_address": "10.14.2.18",
+    "internet_facing": false,
+    "environment": "production",
+    "criticality": "Medium",
+    "assessment_date": "2025-06-30",
+    "issue_codes": [
+      "MFA_ABSENT"
+    ],
+    "vulnerabilities": [],
+    "owner_team": "Infrastructure"
+  },
+  {
+    "asset_id": "AST-0075",
+    "hostname": "gla-jump-075",
+    "operating_system": "RHEL 8.9",
+    "ip_address": "10.2.180.159",
+    "internet_facing": false,
+    "environment": "production",
+    "criticality": "Critical",
+    "assessment_date": "2025-06-27",
+    "issue_codes": [
+      "PATCH_MISSING",
+      "DEFAULT_CREDENTIALS",
+      "STALE_ACCOUNT",
+      "MFA_ABSENT"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2023-69062",
+        "cvss_score": 4.5,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Heap-based buffer overflow in the TLS handshake routine leads to memory corruption.",
+        "published_date": "2023-03-04",
+        "patch_released_date": "2023-03-09",
+        "patch_applied": false
+      },
+      {
+        "cve_id": "CVE-2023-24652",
+        "cvss_score": 4.9,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "SQL injection in a reporting endpoint allows extraction of database contents.",
+        "published_date": "2023-02-06",
+        "patch_released_date": "2023-02-26",
+        "patch_applied": true
+      },
+      {
+        "cve_id": "CVE-2024-59447",
+        "cvss_score": 6.5,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Cross-site scripting in the administrative console allows script injection.",
+        "published_date": "2024-07-19",
+        "patch_released_date": "2024-08-15",
+        "patch_applied": true
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0076",
+    "hostname": "man-mail-076",
+    "operating_system": "RHEL 8.9",
+    "ip_address": "203.0.113.94",
+    "internet_facing": true,
+    "environment": "test",
+    "criticality": "Low",
+    "assessment_date": "2025-06-30",
+    "issue_codes": [
+      "PATCH_RECORD_ABSENT",
+      "STALE_ACCOUNT",
+      "UNRESTRICTED_INBOUND",
+      "NO_EDR_INGESTION"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2025-80635",
+        "cvss_score": 8.5,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N",
+        "description": "Heap-based buffer overflow in the TLS handshake routine leads to memory corruption.",
+        "published_date": "2025-01-05",
+        "patch_released_date": null,
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0077",
+    "hostname": "bri-web-077",
+    "operating_system": "Ubuntu 20.04 LTS",
+    "ip_address": "203.0.113.235",
+    "internet_facing": true,
+    "environment": "production",
+    "criticality": "High",
+    "assessment_date": "2025-06-29",
+    "issue_codes": [
+      "PATCH_MISSING",
+      "DEFAULT_CREDENTIALS",
+      "EXCESSIVE_PRIVILEGES",
+      "NO_EDR_INGESTION"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2025-21077",
+        "cvss_score": 9.8,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+        "description": "Remote code execution in an internet-facing service allows an unauthenticated attacker to execute arbitrary code with elevated privileges.",
+        "published_date": "2025-06-08",
+        "patch_released_date": "2025-06-15",
+        "patch_applied": false
+      },
+      {
+        "cve_id": "CVE-2024-49760",
+        "cvss_score": 5.1,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Information disclosure in verbose error responses reveals internal host names.",
+        "published_date": "2024-05-16",
+        "patch_released_date": "2024-05-20",
+        "patch_applied": false
+      },
+      {
+        "cve_id": "CVE-2024-86139",
+        "cvss_score": 4.5,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Improper authentication check permits session tokens to be reused after logout.",
+        "published_date": "2024-07-13",
+        "patch_released_date": "2024-07-20",
+        "patch_applied": true
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0078",
+    "hostname": "ncl-mail-078",
+    "operating_system": "Windows 11 Pro 23H2",
+    "ip_address": "10.22.33.142",
+    "internet_facing": false,
+    "environment": "production",
+    "criticality": "Medium",
+    "assessment_date": "2025-06-25",
+    "issue_codes": [
+      "INSECURE_PROTOCOL",
+      "MFA_ABSENT",
+      "AV_SIGNATURE_OUTDATED"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2025-60250",
+        "cvss_score": 2.8,
+        "cvss_vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:N/A:N",
+        "description": "Heap-based buffer overflow in the TLS handshake routine leads to memory corruption.",
+        "published_date": "2025-03-12",
+        "patch_released_date": "2025-04-26",
+        "patch_applied": true
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0079",
+    "hostname": "lon-file-079",
+    "operating_system": "RHEL 8.9",
+    "ip_address": "10.25.245.136",
+    "internet_facing": false,
+    "environment": "development",
+    "criticality": "High",
+    "assessment_date": "2025-06-29",
+    "issue_codes": [
+      "EXCESSIVE_PRIVILEGES",
+      "NO_EDR_INGESTION"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2025-27342",
+        "cvss_score": 5.5,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Remote code execution in the HTTP request parser allows an unauthenticated attacker to execute arbitrary code.",
+        "published_date": "2025-01-26",
+        "patch_released_date": "2025-02-10",
+        "patch_applied": false
+      },
+      {
+        "cve_id": "CVE-2023-49353",
+        "cvss_score": 4.5,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Heap-based buffer overflow in the TLS handshake routine leads to memory corruption.",
+        "published_date": "2023-10-22",
+        "patch_released_date": "2023-11-26",
+        "patch_applied": true
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0080",
+    "hostname": "gla-app-080",
+    "operating_system": "Windows Server 2022",
+    "ip_address": "203.0.113.66",
+    "internet_facing": true,
+    "environment": "staging",
+    "criticality": "Medium",
+    "assessment_date": "2025-06-30",
+    "issue_codes": [
+      "PATCH_RECORD_ABSENT",
+      "STALE_ACCOUNT",
+      "FLAT_NETWORK"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2023-46156",
+        "cvss_score": 5.2,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Information disclosure in verbose error responses reveals internal host names.",
+        "published_date": "2023-12-19",
+        "patch_released_date": null,
+        "patch_applied": false
+      },
+      {
+        "cve_id": "CVE-2024-17912",
+        "cvss_score": 6.4,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Information disclosure in verbose error responses reveals internal host names.",
+        "published_date": "2024-11-26",
+        "patch_released_date": "2024-11-29",
+        "patch_applied": false
+      },
+      {
+        "cve_id": "CVE-2024-22229",
+        "cvss_score": 3.0,
+        "cvss_vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:N/A:N",
+        "description": "Information disclosure in verbose error responses reveals internal host names.",
+        "published_date": "2024-12-14",
+        "patch_released_date": "2025-01-28",
+        "patch_applied": true
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0081",
+    "hostname": "gla-print-081",
+    "operating_system": "Ubuntu 22.04 LTS",
+    "ip_address": "10.2.14.22",
+    "internet_facing": false,
+    "environment": "test",
+    "criticality": "High",
+    "assessment_date": "2025-06-29",
+    "issue_codes": [
+      "PASSWORD_POLICY_NONCOMPLIANCE"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2023-21210",
+        "cvss_score": 6.0,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Denial of service via unbounded resource allocation in the connection handler.",
+        "published_date": "2023-10-14",
+        "patch_released_date": "2023-11-22",
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0082",
+    "hostname": "lee-build-082",
+    "operating_system": "Debian 12",
+    "ip_address": "10.6.163.63",
+    "internet_facing": false,
+    "environment": "production",
+    "criticality": "Medium",
+    "assessment_date": "2025-06-28",
+    "issue_codes": [
+      "PATCH_MISSING",
+      "MFA_ABSENT",
+      "UNMANAGED_SERVICE_EXPOSED",
+      "FLAT_NETWORK"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2023-38967",
+        "cvss_score": 8.0,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N",
+        "description": "Use-after-free in the image decoding library triggered by a crafted file.",
+        "published_date": "2023-11-18",
+        "patch_released_date": "2023-12-07",
+        "patch_applied": true
+      },
+      {
+        "cve_id": "CVE-2024-10564",
+        "cvss_score": 4.8,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Cross-site scripting in the administrative console allows script injection.",
+        "published_date": "2024-02-20",
+        "patch_released_date": "2024-03-01",
+        "patch_applied": true
+      },
+      {
+        "cve_id": "CVE-2024-80516",
+        "cvss_score": 5.2,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Missing bounds check in the SMB request handler permits out-of-bounds read.",
+        "published_date": "2024-06-15",
+        "patch_released_date": null,
+        "patch_applied": false
+      },
+      {
+        "cve_id": "CVE-2024-53260",
+        "cvss_score": 4.2,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "SQL injection in a reporting endpoint allows extraction of database contents.",
+        "published_date": "2024-06-10",
+        "patch_released_date": "2024-06-18",
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0083",
+    "hostname": "lon-file-083",
+    "operating_system": "Windows 10 Pro 22H2",
+    "ip_address": "203.0.113.128",
+    "internet_facing": true,
+    "environment": "test",
+    "criticality": "High",
+    "assessment_date": "2025-06-29",
+    "issue_codes": [
+      "PASSWORD_POLICY_NONCOMPLIANCE",
+      "UNRESTRICTED_INBOUND",
+      "AUTH_SCAN_FAILURE"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2024-43917",
+        "cvss_score": 3.7,
+        "cvss_vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:N/A:N",
+        "description": "Improper authentication check permits session tokens to be reused after logout.",
+        "published_date": "2024-12-18",
+        "patch_released_date": "2025-01-07",
+        "patch_applied": true
+      },
+      {
+        "cve_id": "CVE-2023-62186",
+        "cvss_score": 5.4,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Heap-based buffer overflow in the TLS handshake routine leads to memory corruption.",
+        "published_date": "2023-12-20",
+        "patch_released_date": "2024-01-08",
+        "patch_applied": true
+      },
+      {
+        "cve_id": "CVE-2023-60930",
+        "cvss_score": 8.4,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N",
+        "description": "Remote code execution in the HTTP request parser allows an unauthenticated attacker to execute arbitrary code.",
+        "published_date": "2023-12-30",
+        "patch_released_date": "2024-01-12",
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0084",
+    "hostname": "bri-db-084",
+    "operating_system": "RHEL 8.9",
+    "ip_address": "10.16.187.197",
+    "internet_facing": false,
+    "environment": "production",
+    "criticality": "Medium",
+    "assessment_date": "2025-06-27",
+    "issue_codes": [
+      "UNMANAGED_SERVICE_EXPOSED"
+    ],
+    "vulnerabilities": []
+  },
+  {
+    "asset_id": "AST-0085",
+    "hostname": "bri-build-085",
+    "operating_system": "Windows 10 Pro 22H2",
+    "ip_address": "10.28.143.213",
+    "internet_facing": false,
+    "environment": "staging",
+    "criticality": "Low",
+    "assessment_date": "2025-06-26",
+    "issue_codes": [
+      "EXCESSIVE_PRIVILEGES",
+      "UNRESTRICTED_INBOUND",
+      "FLAT_NETWORK"
+    ],
+    "vulnerabilities": []
+  },
+  {
+    "asset_id": "AST-0086",
+    "hostname": "gla-jump-086",
+    "operating_system": "Windows 10 Pro 22H2",
+    "ip_address": "10.33.233.40",
+    "internet_facing": false,
+    "environment": "test",
+    "criticality": "Low",
+    "assessment_date": "2025-06-30",
+    "issue_codes": [
+      "STALE_ACCOUNT",
+      "UNRESTRICTED_INBOUND",
+      "AV_SIGNATURE_OUTDATED"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2023-53610",
+        "cvss_score": 3.4,
+        "cvss_vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:N/A:N",
+        "description": "Missing bounds check in the SMB request handler permits out-of-bounds read.",
+        "published_date": "2023-12-27",
+        "patch_released_date": "2023-12-29",
+        "patch_applied": true
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0087",
+    "hostname": "ncl-web-087",
+    "operating_system": "Amazon Linux 2023",
+    "ip_address": "10.38.242.69",
+    "internet_facing": false,
+    "environment": "development",
+    "criticality": "High",
+    "assessment_date": "2025-06-26",
+    "issue_codes": [
+      "EXCESSIVE_PRIVILEGES",
+      "UNMANAGED_SERVICE_EXPOSED",
+      "AV_SIGNATURE_OUTDATED",
+      "NO_EDR_INGESTION"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2023-70774",
+        "cvss_score": 5.4,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Remote code execution in the HTTP request parser allows an unauthenticated attacker to execute arbitrary code.",
+        "published_date": "2023-12-23",
+        "patch_released_date": "2024-01-28",
+        "patch_applied": true
+      },
+      {
+        "cve_id": "CVE-2023-15366",
+        "cvss_score": 4.5,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Missing bounds check in the SMB request handler permits out-of-bounds read.",
+        "published_date": "2023-07-08",
+        "patch_released_date": "2023-08-14",
+        "patch_applied": true
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0088",
+    "hostname": "bri-web-088",
+    "operating_system": "Windows Server 2019",
+    "ip_address": "203.0.113.182",
+    "internet_facing": true,
+    "environment": "production",
+    "criticality": "Medium",
+    "assessment_date": "2025-06-26",
+    "issue_codes": [
+      "AUTH_SCAN_FAILURE"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2023-95526",
+        "cvss_score": 3.2,
+        "cvss_vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:N/A:N",
+        "description": "Use-after-free in the image decoding library triggered by a crafted file.",
+        "published_date": "2023-08-22",
+        "patch_released_date": "2023-09-15",
+        "patch_applied": true
+      },
+      {
+        "cve_id": "CVE-2023-92818",
+        "cvss_score": 3.6,
+        "cvss_vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:N/A:N",
+        "description": "Remote code execution in the HTTP request parser allows an unauthenticated attacker to execute arbitrary code.",
+        "published_date": "2023-10-19",
+        "patch_released_date": null,
+        "patch_applied": false
+      },
+      {
+        "cve_id": "CVE-2024-20848",
+        "cvss_score": 5.0,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Denial of service via unbounded resource allocation in the connection handler.",
+        "published_date": "2024-03-25",
+        "patch_released_date": "2024-04-07",
+        "patch_applied": true
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0089",
+    "hostname": "gla-dc-089",
+    "operating_system": "RHEL 9.3",
+    "ip_address": "10.31.162.124",
+    "internet_facing": false,
+    "environment": "staging",
+    "criticality": "Critical",
+    "assessment_date": "2025-06-25",
+    "issue_codes": [
+      "DEFAULT_CREDENTIALS",
+      "STALE_ACCOUNT",
+      "MFA_ABSENT",
+      "INSUFFICIENT_SCAN_CREDENTIALS"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2023-95493",
+        "cvss_score": 5.7,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Cross-site scripting in the administrative console allows script injection.",
+        "published_date": "2023-07-04",
+        "patch_released_date": "2023-08-17",
+        "patch_applied": true
+      },
+      {
+        "cve_id": "CVE-2024-37569",
+        "cvss_score": 3.3,
+        "cvss_vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:N/A:N",
+        "description": "Path traversal in the file upload handler exposes files outside the web root.",
+        "published_date": "2024-09-16",
+        "patch_released_date": "2024-09-30",
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-9006",
+    "hostname": "lee-mail-906",
+    "operating_system": "Ubuntu 20.04 LTS",
+    "ip_address": "203.0.113.202",
+    "internet_facing": true,
+    "environment": "production",
+    "criticality": "High",
+    "assessment_date": "2025-06-30",
+    "issue_codes": [
+      "INSECURE_PROTOCOL"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2024-31210",
+        "cvss_score": 7.5,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N",
+        "description": "Placeholder vulnerability for a deliberately malformed record.",
+        "published_date": "2025-05-21",
+        "patch_released_date": "2025-06-10",
+        "patch_applied": false,
+        "exploit_available": true
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0090",
+    "hostname": "lon-print-090",
+    "operating_system": "Windows 10 Pro 22H2",
+    "ip_address": "203.0.113.191",
+    "internet_facing": true,
+    "environment": "production",
+    "criticality": "Low",
+    "assessment_date": "2025-06-25",
+    "issue_codes": [
+      "PATCH_MISSING"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2024-46237",
+        "cvss_score": 8.1,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N",
+        "description": "Path traversal in the file upload handler exposes files outside the web root.",
+        "published_date": "2024-04-17",
+        "patch_released_date": "2024-04-26",
+        "patch_applied": true
+      },
+      {
+        "cve_id": "CVE-2025-46398",
+        "cvss_score": 8.5,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N",
+        "description": "Cross-site scripting in the administrative console allows script injection.",
+        "published_date": "2025-03-07",
+        "patch_released_date": "2025-04-17",
+        "patch_applied": true
+      },
+      {
+        "cve_id": "CVE-2023-71592",
+        "cvss_score": 3.5,
+        "cvss_vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:N/A:N",
+        "description": "Improper authentication check permits session tokens to be reused after logout.",
+        "published_date": "2023-01-30",
+        "patch_released_date": "2023-03-06",
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0091",
+    "hostname": "man-web-091",
+    "operating_system": "Windows 11 Pro 23H2",
+    "ip_address": "203.0.113.248",
+    "internet_facing": true,
+    "environment": "dr",
+    "criticality": "Low",
+    "assessment_date": "2025-06-26",
+    "issue_codes": [
+      "PATCH_MISSING",
+      "PATCH_RECORD_ABSENT"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2023-62918",
+        "cvss_score": 4.8,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Use-after-free in the image decoding library triggered by a crafted file.",
+        "published_date": "2023-05-24",
+        "patch_released_date": "2023-05-30",
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0092",
+    "hostname": "ncl-web-092",
+    "operating_system": "Ubuntu 22.04 LTS",
+    "ip_address": "203.0.113.138",
+    "internet_facing": true,
+    "environment": "production",
+    "criticality": "High",
+    "assessment_date": "2025-06-25",
+    "issue_codes": [
+      "PATCH_MISSING",
+      "DEFAULT_CREDENTIALS",
+      "PASSWORD_POLICY_NONCOMPLIANCE"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2025-21092",
+        "cvss_score": 9.8,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+        "description": "Remote code execution in an internet-facing service allows an unauthenticated attacker to execute arbitrary code with elevated privileges.",
+        "published_date": "2025-06-04",
+        "patch_released_date": "2025-06-11",
+        "patch_applied": false
+      },
+      {
+        "cve_id": "CVE-2024-38649",
+        "cvss_score": 5.2,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Heap-based buffer overflow in the TLS handshake routine leads to memory corruption.",
+        "published_date": "2024-11-03",
+        "patch_released_date": "2024-12-14",
+        "patch_applied": true
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0093",
+    "hostname": "gla-db-093",
+    "operating_system": "Windows Server 2019",
+    "ip_address": "10.29.131.185",
+    "internet_facing": false,
+    "environment": "production",
+    "criticality": "Medium",
+    "assessment_date": "2025-06-29",
+    "issue_codes": [
+      "INSECURE_PROTOCOL"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2024-99173",
+        "cvss_score": 7.4,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N",
+        "description": "Remote code execution in the HTTP request parser allows an unauthenticated attacker to execute arbitrary code.",
+        "published_date": "2024-11-21",
+        "patch_released_date": "2024-12-09",
+        "patch_applied": false
+      },
+      {
+        "cve_id": "CVE-2023-15064",
+        "cvss_score": 4.0,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Use-after-free in the image decoding library triggered by a crafted file.",
+        "published_date": "2023-09-21",
+        "patch_released_date": "2023-10-12",
+        "patch_applied": true
+      },
+      {
+        "cve_id": "CVE-2024-18589",
+        "cvss_score": 5.7,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Heap-based buffer overflow in the TLS handshake routine leads to memory corruption.",
+        "published_date": "2024-01-11",
+        "patch_released_date": "2024-02-09",
+        "patch_applied": true
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0094",
+    "hostname": "lon-file-094",
+    "operating_system": "Amazon Linux 2023",
+    "ip_address": "10.23.120.17",
+    "internet_facing": false,
+    "environment": "production",
+    "criticality": "Medium",
+    "assessment_date": "2025-06-28",
+    "issue_codes": [
+      "DEFAULT_CREDENTIALS",
+      "EXCESSIVE_PRIVILEGES"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2023-43982",
+        "cvss_score": 7.6,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N",
+        "description": "Use-after-free in the image decoding library triggered by a crafted file.",
+        "published_date": "2023-12-19",
+        "patch_released_date": null,
+        "patch_applied": false
+      },
+      {
+        "cve_id": "CVE-2025-63580",
+        "cvss_score": 2.6,
+        "cvss_vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:N/A:N",
+        "description": "Privilege escalation via an unquoted service path in the installer.",
+        "published_date": "2025-01-06",
+        "patch_released_date": "2025-01-21",
+        "patch_applied": true
+      },
+      {
+        "cve_id": "CVE-2023-35995",
+        "cvss_score": 3.6,
+        "cvss_vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:N/A:N",
+        "description": "Denial of service via unbounded resource allocation in the connection handler.",
+        "published_date": "2023-04-19",
+        "patch_released_date": "2023-05-08",
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0095",
+    "hostname": "man-dc-095",
+    "operating_system": "Debian 12",
+    "ip_address": "10.38.41.136",
+    "internet_facing": false,
+    "environment": "production",
+    "criticality": "Medium",
+    "assessment_date": "2025-06-27",
+    "issue_codes": [
+      "PATCH_RECORD_ABSENT",
+      "STALE_ACCOUNT",
+      "AV_SIGNATURE_OUTDATED"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2024-29721",
+        "cvss_score": 4.5,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Missing bounds check in the SMB request handler permits out-of-bounds read.",
+        "published_date": "2024-10-14",
+        "patch_released_date": null,
+        "patch_applied": false
+      },
+      {
+        "cve_id": "CVE-2024-55505",
+        "cvss_score": 8.7,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N",
+        "description": "Use-after-free in the image decoding library triggered by a crafted file.",
+        "published_date": "2024-05-11",
+        "patch_released_date": "2024-06-10",
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0096",
+    "hostname": "ncl-print-096",
+    "operating_system": "Ubuntu 20.04 LTS",
+    "ip_address": "203.0.113.127",
+    "internet_facing": true,
+    "environment": "test",
+    "criticality": "Medium",
+    "assessment_date": "2025-06-26",
+    "issue_codes": [
+      "PASSWORD_POLICY_NONCOMPLIANCE",
+      "UNMANAGED_SERVICE_EXPOSED"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2023-58912",
+        "cvss_score": 3.1,
+        "cvss_vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:N/A:N",
+        "description": "Deserialisation of untrusted data allows arbitrary object instantiation.",
+        "published_date": "2023-12-12",
+        "patch_released_date": null,
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0097",
+    "hostname": "gla-vpn-097",
+    "operating_system": "Ubuntu 20.04 LTS",
+    "ip_address": "10.28.193.98",
+    "internet_facing": false,
+    "environment": "staging",
+    "criticality": "High",
+    "assessment_date": "2025-06-30",
+    "issue_codes": [
+      "PATCH_MISSING",
+      "MFA_ABSENT",
+      "UNMANAGED_SERVICE_EXPOSED"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2024-95801",
+        "cvss_score": 6.6,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Path traversal in the file upload handler exposes files outside the web root.",
+        "published_date": "2024-07-20",
+        "patch_released_date": null,
+        "patch_applied": false
+      },
+      {
+        "cve_id": "CVE-2023-29560",
+        "cvss_score": 7.6,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N",
+        "description": "Missing bounds check in the SMB request handler permits out-of-bounds read.",
+        "published_date": "2023-04-29",
+        "patch_released_date": "2023-05-01",
+        "patch_applied": true
+      },
+      {
+        "cve_id": "CVE-2025-10046",
+        "cvss_score": 2.4,
+        "cvss_vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:N/A:N",
+        "description": "Privilege escalation via an unquoted service path in the installer.",
+        "published_date": "2025-03-31",
+        "patch_released_date": "2025-04-30",
+        "patch_applied": true
+      },
+      {
+        "cve_id": "CVE-2025-85085",
+        "cvss_score": 3.2,
+        "cvss_vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:N/A:N",
+        "description": "Privilege escalation via an unquoted service path in the installer.",
+        "published_date": "2025-01-13",
+        "patch_released_date": "2025-02-23",
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0098",
+    "hostname": "lee-web-098",
+    "operating_system": "Windows Server 2022",
+    "ip_address": "203.0.113.63",
+    "internet_facing": true,
+    "environment": "production",
+    "criticality": "Medium",
+    "assessment_date": "2025-06-26",
+    "issue_codes": [
+      "PATCH_RECORD_ABSENT",
+      "DEFAULT_CREDENTIALS",
+      "UNRESTRICTED_INBOUND"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2023-30188",
+        "cvss_score": 5.6,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Cross-site scripting in the administrative console allows script injection.",
+        "published_date": "2023-05-13",
+        "patch_released_date": null,
+        "patch_applied": false
+      },
+      {
+        "cve_id": "CVE-2023-56591",
+        "cvss_score": 6.6,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "SQL injection in a reporting endpoint allows extraction of database contents.",
+        "published_date": "2023-11-17",
+        "patch_released_date": "2023-12-01",
+        "patch_applied": true
+      },
+      {
+        "cve_id": "CVE-2024-96030",
+        "cvss_score": 3.1,
+        "cvss_vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:N/A:N",
+        "description": "Privilege escalation via an unquoted service path in the installer.",
+        "published_date": "2024-11-15",
+        "patch_released_date": "2024-11-17",
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0099",
+    "hostname": "man-build-099",
+    "operating_system": "SUSE Linux Enterprise 15 SP5",
+    "ip_address": "10.18.119.210",
+    "internet_facing": false,
+    "environment": "staging",
+    "criticality": "Medium",
+    "assessment_date": "2025-06-27",
+    "issue_codes": [
+      "UNMANAGED_SERVICE_EXPOSED"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2024-58535",
+        "cvss_score": 7.0,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N",
+        "description": "Remote code execution in the HTTP request parser allows an unauthenticated attacker to execute arbitrary code.",
+        "published_date": "2024-04-12",
+        "patch_released_date": "2024-04-25",
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0100",
+    "hostname": "ncl-db-100",
+    "operating_system": "Debian 12",
+    "ip_address": "10.40.218.144",
+    "internet_facing": false,
+    "environment": "production",
+    "criticality": "Medium",
+    "assessment_date": "2025-06-25",
+    "issue_codes": [
+      "EXCESSIVE_PRIVILEGES",
+      "FLAT_NETWORK"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2023-29972",
+        "cvss_score": 8.7,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N",
+        "description": "Denial of service via unbounded resource allocation in the connection handler.",
+        "published_date": "2023-12-10",
+        "patch_released_date": "2023-12-27",
+        "patch_applied": true
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0101",
+    "hostname": "bri-mail-101",
+    "operating_system": "Windows Server 2016",
+    "ip_address": "10.5.97.15",
+    "internet_facing": false,
+    "environment": "production",
+    "criticality": "High",
+    "assessment_date": "2025-06-25",
+    "issue_codes": [
+      "PASSWORD_POLICY_NONCOMPLIANCE",
+      "AV_SIGNATURE_OUTDATED"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2024-25101",
+        "cvss_score": 3.0,
+        "cvss_vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:N/A:N",
+        "description": "Deserialisation of untrusted data allows arbitrary object instantiation.",
+        "published_date": "2024-05-06",
+        "patch_released_date": "2024-06-05",
+        "patch_applied": true
+      },
+      {
+        "cve_id": "CVE-2023-19920",
+        "cvss_score": 4.0,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Privilege escalation via an unquoted service path in the installer.",
+        "published_date": "2023-06-02",
+        "patch_released_date": "2023-06-05",
+        "patch_applied": false
+      },
+      {
+        "cve_id": "CVE-2025-51910",
+        "cvss_score": 5.8,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Heap-based buffer overflow in the TLS handshake routine leads to memory corruption.",
+        "published_date": "2025-01-09",
+        "patch_released_date": "2025-01-22",
+        "patch_applied": true
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0102",
+    "hostname": "ncl-app-102",
+    "operating_system": "Windows 10 Pro 22H2",
+    "ip_address": "10.30.124.180",
+    "internet_facing": false,
+    "environment": "development",
+    "criticality": "Medium",
+    "assessment_date": "2025-06-30",
+    "issue_codes": [
+      "NO_EDR_INGESTION"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2024-40739",
+        "cvss_score": 5.3,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Deserialisation of untrusted data allows arbitrary object instantiation.",
+        "published_date": "2024-06-25",
+        "patch_released_date": "2024-06-25",
+        "patch_applied": true
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0103",
+    "hostname": "lee-dc-103",
+    "operating_system": "Windows 11 Pro 23H2",
+    "ip_address": "10.9.8.68",
+    "internet_facing": false,
+    "environment": "test",
+    "criticality": "Medium",
+    "assessment_date": "2025-06-29",
+    "issue_codes": [
+      "PASSWORD_POLICY_NONCOMPLIANCE",
+      "MFA_ABSENT",
+      "AUTH_SCAN_FAILURE"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2024-68215",
+        "cvss_score": 4.1,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Missing bounds check in the SMB request handler permits out-of-bounds read.",
+        "published_date": "2024-05-27",
+        "patch_released_date": "2024-06-25",
+        "patch_applied": true
+      },
+      {
+        "cve_id": "CVE-2023-42973",
+        "cvss_score": 5.2,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Remote code execution in the HTTP request parser allows an unauthenticated attacker to execute arbitrary code.",
+        "published_date": "2023-01-22",
+        "patch_released_date": "2023-02-14",
+        "patch_applied": true
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0104",
+    "hostname": "gla-jump-104",
+    "operating_system": "SUSE Linux Enterprise 15 SP5",
+    "ip_address": "10.31.235.45",
+    "internet_facing": false,
+    "environment": "development",
+    "criticality": "Low",
+    "assessment_date": "2025-06-27",
+    "issue_codes": [
+      "STALE_ACCOUNT",
+      "INSUFFICIENT_SCAN_CREDENTIALS"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2023-33208",
+        "cvss_score": 4.6,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "SQL injection in a reporting endpoint allows extraction of database contents.",
+        "published_date": "2023-01-26",
+        "patch_released_date": "2023-03-08",
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-9007",
+    "hostname": "ncl-jump-907",
+    "operating_system": "Windows Server 2016",
+    "ip_address": "10.19.6.7",
+    "internet_facing": false,
+    "environment": "dr",
+    "criticality": "Medium",
+    "assessment_date": "31/06/2025",
+    "issue_codes": [
+      "EXCESSIVE_PRIVILEGES"
+    ],
+    "vulnerabilities": []
+  },
+  {
+    "asset_id": "AST-0105",
+    "hostname": "lon-vpn-105",
+    "operating_system": "SUSE Linux Enterprise 15 SP5",
+    "ip_address": "10.8.118.19",
+    "internet_facing": false,
+    "environment": "production",
+    "criticality": "Medium",
+    "assessment_date": "2025-06-25",
+    "issue_codes": [
+      "PATCH_MISSING",
+      "INSUFFICIENT_SCAN_CREDENTIALS"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2023-10742",
+        "cvss_score": 5.6,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Remote code execution in the HTTP request parser allows an unauthenticated attacker to execute arbitrary code.",
+        "published_date": "2023-01-18",
+        "patch_released_date": "2023-03-01",
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0106",
+    "hostname": "ncl-file-106",
+    "operating_system": "Windows 11 Pro 23H2",
+    "ip_address": "10.34.146.6",
+    "internet_facing": false,
+    "environment": "development",
+    "criticality": "High",
+    "assessment_date": "2025-06-27",
+    "issue_codes": [
+      "PATCH_MISSING",
+      "PATCH_RECORD_ABSENT",
+      "MFA_ABSENT",
+      "FLAT_NETWORK"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2024-2553",
+        "cvss_score": 5.6,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Information disclosure in verbose error responses reveals internal host names.",
+        "published_date": "2024-04-02",
+        "patch_released_date": "2024-04-03",
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0107",
+    "hostname": "lon-web-107",
+    "operating_system": "Ubuntu 22.04 LTS",
+    "ip_address": "203.0.113.63",
+    "internet_facing": true,
+    "environment": "production",
+    "criticality": "High",
+    "assessment_date": "2025-06-29",
+    "issue_codes": [
+      "PATCH_MISSING",
+      "DEFAULT_CREDENTIALS",
+      "STALE_ACCOUNT",
+      "AUTH_SCAN_FAILURE"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2025-21107",
+        "cvss_score": 9.8,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+        "description": "Remote code execution in an internet-facing service allows an unauthenticated attacker to execute arbitrary code with elevated privileges.",
+        "published_date": "2025-06-08",
+        "patch_released_date": "2025-06-15",
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0108",
+    "hostname": "bri-vpn-108",
+    "operating_system": "Amazon Linux 2023",
+    "ip_address": "10.24.243.16",
+    "internet_facing": false,
+    "environment": "production",
+    "criticality": "Low",
+    "assessment_date": "2025-06-28",
+    "issue_codes": [
+      "INSECURE_PROTOCOL"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2024-75055",
+        "cvss_score": 8.5,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N",
+        "description": "Use-after-free in the image decoding library triggered by a crafted file.",
+        "published_date": "2024-02-14",
+        "patch_released_date": "2024-03-29",
+        "patch_applied": true
+      },
+      {
+        "cve_id": "CVE-2025-86686",
+        "cvss_score": 7.6,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N",
+        "description": "Heap-based buffer overflow in the TLS handshake routine leads to memory corruption.",
+        "published_date": "2025-03-08",
+        "patch_released_date": "2025-04-18",
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0109",
+    "hostname": "lee-web-109",
+    "operating_system": "SUSE Linux Enterprise 15 SP5",
+    "ip_address": "10.14.108.232",
+    "internet_facing": false,
+    "environment": "test",
+    "criticality": "Medium",
+    "assessment_date": "2025-06-27",
+    "issue_codes": [
+      "EXCESSIVE_PRIVILEGES",
+      "UNMANAGED_SERVICE_EXPOSED",
+      "AUTH_SCAN_FAILURE"
+    ],
+    "vulnerabilities": []
+  },
+  {
+    "asset_id": "AST-0110",
+    "hostname": "man-mail-110",
+    "operating_system": "Windows Server 2019",
+    "ip_address": "10.1.106.152",
+    "internet_facing": false,
+    "environment": "development",
+    "criticality": "High",
+    "assessment_date": "2025-06-30",
+    "issue_codes": [
+      "STALE_ACCOUNT",
+      "UNRESTRICTED_INBOUND",
+      "INSUFFICIENT_SCAN_CREDENTIALS"
+    ],
+    "vulnerabilities": []
+  },
+  {
+    "asset_id": "AST-0111",
+    "hostname": "man-app-111",
+    "operating_system": "Ubuntu 20.04 LTS",
+    "ip_address": "10.32.177.15",
+    "internet_facing": false,
+    "environment": "production",
+    "criticality": "High",
+    "assessment_date": "2025-06-27",
+    "issue_codes": [
+      "DEFAULT_CREDENTIALS",
+      "PASSWORD_POLICY_NONCOMPLIANCE",
+      "UNMANAGED_SERVICE_EXPOSED"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2023-52007",
+        "cvss_score": 5.9,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Missing bounds check in the SMB request handler permits out-of-bounds read.",
+        "published_date": "2023-01-10",
+        "patch_released_date": "2023-02-13",
+        "patch_applied": true
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0112",
+    "hostname": "ncl-app-112",
+    "operating_system": "RHEL 8.9",
+    "ip_address": "10.5.137.41",
+    "internet_facing": false,
+    "environment": "development",
+    "criticality": "High",
+    "assessment_date": "2025-06-28",
+    "issue_codes": [
+      "PATCH_MISSING",
+      "STALE_ACCOUNT",
+      "MFA_ABSENT",
+      "NO_EDR_INGESTION"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2024-65304",
+        "cvss_score": 7.3,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N",
+        "description": "Privilege escalation via an unquoted service path in the installer.",
+        "published_date": "2024-02-23",
+        "patch_released_date": "2024-03-29",
+        "patch_applied": false
+      },
+      {
+        "cve_id": "CVE-2023-87595",
+        "cvss_score": 3.3,
+        "cvss_vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:N/A:N",
+        "description": "Deserialisation of untrusted data allows arbitrary object instantiation.",
+        "published_date": "2023-10-08",
+        "patch_released_date": "2023-11-16",
+        "patch_applied": true
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0113",
+    "hostname": "gla-jump-113",
+    "operating_system": "Windows Server 2019",
+    "ip_address": "10.23.138.28",
+    "internet_facing": false,
+    "environment": "production",
+    "criticality": "Medium",
+    "assessment_date": "2025-06-25",
+    "issue_codes": [
+      "PATCH_RECORD_ABSENT",
+      "UNRESTRICTED_INBOUND",
+      "INSUFFICIENT_SCAN_CREDENTIALS"
+    ],
+    "vulnerabilities": []
+  },
+  {
+    "asset_id": "AST-0114",
+    "hostname": "ncl-vpn-114",
+    "operating_system": "Windows Server 2016",
+    "ip_address": "10.10.71.70",
+    "internet_facing": false,
+    "environment": "production",
+    "criticality": "Low",
+    "assessment_date": "2025-06-26",
+    "issue_codes": [
+      "PATCH_MISSING",
+      "PATCH_RECORD_ABSENT",
+      "UNMANAGED_SERVICE_EXPOSED",
+      "INSUFFICIENT_SCAN_CREDENTIALS"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2023-79386",
+        "cvss_score": 5.8,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Privilege escalation via an unquoted service path in the installer.",
+        "published_date": "2023-09-24",
+        "patch_released_date": null,
+        "patch_applied": false
+      },
+      {
+        "cve_id": "CVE-2025-96006",
+        "cvss_score": 4.6,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Improper authentication check permits session tokens to be reused after logout.",
+        "published_date": "2025-03-02",
+        "patch_released_date": "2025-03-17",
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0115",
+    "hostname": "gla-file-115",
+    "operating_system": "Windows 10 Pro 22H2",
+    "ip_address": "10.15.253.154",
+    "internet_facing": false,
+    "environment": "production",
+    "criticality": "Low",
+    "assessment_date": "2025-06-29",
+    "issue_codes": [
+      "EXCESSIVE_PRIVILEGES",
+      "MFA_ABSENT",
+      "FLAT_NETWORK",
+      "NO_EDR_INGESTION"
+    ],
+    "vulnerabilities": []
+  },
+  {
+    "asset_id": "AST-0116",
+    "hostname": "gla-vpn-116",
+    "operating_system": "RHEL 8.9",
+    "ip_address": "203.0.113.73",
+    "internet_facing": true,
+    "environment": "production",
+    "criticality": "Critical",
+    "assessment_date": "2025-06-28",
+    "issue_codes": [
+      "STALE_ACCOUNT",
+      "UNMANAGED_SERVICE_EXPOSED",
+      "AV_SIGNATURE_OUTDATED",
+      "AUTH_SCAN_FAILURE"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2024-58700",
+        "cvss_score": 7.5,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N",
+        "description": "Improper authentication check permits session tokens to be reused after logout.",
+        "published_date": "2024-06-26",
+        "patch_released_date": "2024-08-06",
+        "patch_applied": false
+      },
+      {
+        "cve_id": "CVE-2023-92133",
+        "cvss_score": 4.0,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Privilege escalation via an unquoted service path in the installer.",
+        "published_date": "2023-09-20",
+        "patch_released_date": "2023-10-10",
+        "patch_applied": true
+      },
+      {
+        "cve_id": "CVE-2024-97321",
+        "cvss_score": 8.6,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N",
+        "description": "Deserialisation of untrusted data allows arbitrary object instantiation.",
+        "published_date": "2024-08-04",
+        "patch_released_date": "2024-09-04",
+        "patch_applied": false
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0117",
+    "hostname": "ncl-jump-117",
+    "operating_system": "Windows Server 2016",
+    "ip_address": "10.13.224.206",
+    "internet_facing": false,
+    "environment": "development",
+    "criticality": "Low",
+    "assessment_date": "2025-06-29",
+    "issue_codes": [
+      "FLAT_NETWORK",
+      "NO_EDR_INGESTION"
+    ],
+    "vulnerabilities": []
+  },
+  {
+    "asset_id": "AST-0118",
+    "hostname": "gla-build-118",
+    "operating_system": "Windows Server 2022",
+    "ip_address": "10.38.43.29",
+    "internet_facing": false,
+    "environment": "staging",
+    "criticality": "Medium",
+    "assessment_date": "2025-06-27",
+    "issue_codes": [
+      "FLAT_NETWORK",
+      "AUTH_SCAN_FAILURE"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2023-21203",
+        "cvss_score": 3.6,
+        "cvss_vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:N/A:N",
+        "description": "Denial of service via unbounded resource allocation in the connection handler.",
+        "published_date": "2023-07-24",
+        "patch_released_date": "2023-08-17",
+        "patch_applied": true
+      },
+      {
+        "cve_id": "CVE-2024-71040",
+        "cvss_score": 5.3,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Remote code execution in the HTTP request parser allows an unauthenticated attacker to execute arbitrary code.",
+        "published_date": "2024-04-13",
+        "patch_released_date": "2024-05-27",
+        "patch_applied": true
+      }
+    ]
+  },
+  {
+    "asset_id": "AST-0119",
+    "hostname": "lon-app-119",
+    "operating_system": "RHEL 9.3",
+    "ip_address": "10.9.178.81",
+    "internet_facing": false,
+    "environment": "production",
+    "criticality": "Medium",
+    "assessment_date": "2025-06-25",
+    "issue_codes": [
+      "STALE_ACCOUNT",
+      "NO_EDR_INGESTION",
+      "INSUFFICIENT_SCAN_CREDENTIALS"
+    ],
+    "vulnerabilities": [
+      {
+        "cve_id": "CVE-2025-34913",
+        "cvss_score": 2.7,
+        "cvss_vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:N/A:N",
+        "description": "Missing bounds check in the SMB request handler permits out-of-bounds read.",
+        "published_date": "2025-02-15",
+        "patch_released_date": "2025-03-20",
+        "patch_applied": false
+      },
+      {
+        "cve_id": "CVE-2024-50036",
+        "cvss_score": 5.9,
+        "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N",
+        "description": "Information disclosure in verbose error responses reveals internal host names.",
+        "published_date": "2024-02-25",
+        "patch_released_date": "2024-04-08",
+        "patch_applied": false
+      },
+      {
+        "cve_id": "CVE-2025-64277",
+        "cvss_score": 3.0,
+        "cvss_vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:N/A:N",
+        "description": "Privilege escalation via an unquoted service path in the installer.",
+        "published_date": "2025-05-01",
+        "patch_released_date": null,
+        "patch_applied": false
+      }
+    ]
+  }
+]

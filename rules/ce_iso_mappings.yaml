@@ -1,0 +1,704 @@
+# =====================================================================================
+# ce_iso_mappings.yaml  -  Stage 2 rule base
+# Cyber Essentials / Cyber Essentials Plus  x  ISO/IEC 27001:2022 Annex A
+# =====================================================================================
+#
+# PROVENANCE AND ACADEMIC INTEGRITY
+# ---------------------------------
+# George's interim-report matrix (Appendix Ai/Aii) contains 47 mapped intersections.
+# Only 15 of those are reproduced here from the source document and are marked
+# `verified: true`. They are transcribed verbatim from Appendix Aii and MUST NOT be
+# altered by any agent or tool.
+#
+# Every other intersection in this file is a BEST-EFFORT engineering mapping. It is
+# marked `verified: false` and carries the inline marker:
+#
+#     # UNVERIFIED - confirm against George interim-report matrix (Appendix Ai/Aii)
+#
+# Unverified mappings are NOT authoritative and are NOT sourced. They exist only so
+# that Stage 2 has full IssueCode coverage and never hits an unmapped issue. They are
+# enumerated for confirmation in rules/UNVERIFIED_MAPPINGS.md. The rule base has
+# deliberately NOT been padded out to 47 intersections: closing the gap to 47 is
+# George's job, against his own source. See Risk Note (iii).
+#
+# ISO Annex A control universe (closed set - do not introduce controls outside it):
+#   A.5.15, A.5.16, A.5.17, A.8.5, A.8.7, A.8.8, A.8.9, A.8.16, A.8.20, A.8.21,
+#   A.8.22, A.8.23, A.8.27, A.8.32
+#
+# Schema notes for src/mapping/engine.py:
+#   ce_pillar        - the matrix ROW this rule's ISO mappings land on by default.
+#   control_mappings - list of ControlMapping (src/models.py, FROZEN).
+#                      `verified`, `source` and `matrix_rows` are rule-base metadata,
+#                      stripped by the loader before ControlMapping construction.
+#   matrix_rows      - optional override: extra/other CE pillar rows this ISO control
+#                      intersects. Defaults to [ce_pillar].
+# =====================================================================================
+
+# --- Matrix axes -----------------------------------------------------------------
+# Row order follows the Cyber Essentials scheme, then the two CE Plus assessment
+# activities. Column order follows the Annex A control universe as listed above.
+
+ce_pillars:
+  - Firewalls
+  - Secure Configuration
+  - User Access Control
+  - Malware Protection
+  - Patch Management
+  - CE+ Vulnerability Scan
+  - CE+ Authenticated Audit
+
+iso_control_universe:
+  - id: A.5.15
+    name: Access control
+  - id: A.5.16
+    name: Identity management
+  - id: A.5.17
+    name: Authentication information
+  - id: A.8.5
+    name: Secure authentication
+  - id: A.8.7
+    name: Protection against malware
+  - id: A.8.8
+    name: Management of technical vulnerabilities
+  - id: A.8.9
+    name: Configuration management
+  - id: A.8.16
+    name: Monitoring activities
+  - id: A.8.20
+    name: Networks security
+  - id: A.8.21
+    name: Security of network services
+  - id: A.8.22
+    name: Segregation of networks
+  - id: A.8.23
+    name: Web filtering
+  - id: A.8.27
+    name: Secure system architecture
+  - id: A.8.32
+    name: Change management
+
+rules:
+
+  # ===============================================================================
+  # PATCH MANAGEMENT
+  # ===============================================================================
+
+  # -------------------------------------------------------------------------------
+  # FINDING #017 REFERENCE CARD - fully verified against Appendix Aii.
+  # This rule is the structural template for every other rule in the file: one issue
+  # code carrying several control mappings across three frameworks.
+  # Reference scenario: internet-facing Ubuntu host, critical CVE (CVSS 9.8), vendor
+  # patch released 14 days before assessment_date, patch_applied: false.
+  # DO NOT EDIT any mapping in this rule.
+  # -------------------------------------------------------------------------------
+  - rule_id: CE-PATCH-001
+    issue_code: PATCH_MISSING
+    title: Vendor security patch not applied
+    ce_pillar: Patch Management
+    control_mappings:
+      - framework: Cyber Essentials
+        control_id: Patch Management
+        control_name: Patch Management
+        mapping_type: Primary
+        verified: true
+        source: Appendix Aii - FINDING #017
+      - framework: Cyber Essentials Plus
+        control_id: Vulnerability Scan
+        control_name: Vulnerability Scan
+        mapping_type: Primary
+        verified: true
+        source: Appendix Aii - FINDING #017
+      - framework: ISO/IEC 27001:2022
+        control_id: A.8.8
+        control_name: Management of technical vulnerabilities
+        mapping_type: Primary
+        verified: true
+        source: Appendix Aii - FINDING #017
+        # Both the CE Patch Management row and the CE+ Vulnerability Scan row
+        # intersect A.8.8 as Primary. The CE+ row is independently corroborated by
+        # the AUTH_SCAN_FAILURE row of Appendix Aii, so both are verified.
+        matrix_rows: [Patch Management, CE+ Vulnerability Scan]
+      - framework: ISO/IEC 27001:2022
+        control_id: A.8.32
+        control_name: Change management
+        mapping_type: Secondary
+        verified: true
+        source: Appendix Aii - FINDING #017
+        # Corroborated by the PATCH_RECORD_ABSENT row of Appendix Aii.
+        matrix_rows: [Patch Management]
+    # Tester note (Agent 5): added "the asset is {exposure} and" to restore the causal
+    # exposure clause of the FINDING #017 reference tone (blueprint Section 7: "Because
+    # the asset is internet-facing and the vendor patch was released N days ago ...").
+    # Template prose only; no control mapping in this rule was touched.
+    explanation_template: >-
+      Host {hostname} is running software affected by {cve_id}, rated CVSS {cvss_score}.
+      This vulnerability allows an attacker to exploit a publicly documented weakness for
+      which the vendor has already published a fix. Because the asset is {exposure} and
+      the vendor patch was released {days} days ago without being applied, the finding
+      fails Cyber Essentials patch-management requirements and the Cyber Essentials Plus
+      vulnerability-scan criterion, and breaches ISO/IEC 27001:2022 Annex A.8.8
+      (Management of technical vulnerabilities). The absence of a corresponding change
+      record also engages A.8.32 (Change management).
+    remediation_steps:
+      - Apply the vendor security update for {cve_id} to {hostname} and reboot if the
+        update requires it.
+      - Raise a change record for the update so the action is auditable under A.8.32.
+      - Re-run an authenticated vulnerability scan against {hostname} to confirm the
+        CVE no longer reports.
+      - If the patch cannot be applied within the Cyber Essentials 14-day window, record
+        a documented compensating control and a target remediation date.
+
+  - rule_id: CE-PATCH-002
+    issue_code: PATCH_RECORD_ABSENT
+    title: No change or patch record for applied updates
+    ce_pillar: Patch Management
+    control_mappings:
+      - framework: Cyber Essentials
+        control_id: Patch Management
+        control_name: Patch Management
+        mapping_type: Primary
+        verified: true
+        source: Appendix Aii - CE pillar column
+      - framework: ISO/IEC 27001:2022
+        control_id: A.8.32
+        control_name: Change management
+        mapping_type: Secondary
+        verified: true
+        source: Appendix Aii
+        matrix_rows: [Patch Management]
+      # UNVERIFIED - confirm against George interim-report matrix (Appendix Ai/Aii)
+      # Rationale: patch state is part of the recorded baseline configuration of the
+      # asset, so a missing patch record is arguably also a configuration-management
+      # gap. Best-effort only.
+      - framework: ISO/IEC 27001:2022
+        control_id: A.8.9
+        control_name: Configuration management
+        mapping_type: Secondary
+        verified: false
+        matrix_rows: [Patch Management]
+    explanation_template: >-
+      Host {hostname} has no retrievable patch or change record covering its installed
+      security updates. Without a record there is no evidence that updates were applied
+      within the Cyber Essentials 14-day window, and the update history cannot be
+      reconstructed during an assessment. This breaches ISO/IEC 27001:2022 Annex A.8.32
+      (Change management), which requires changes to information processing facilities to
+      be documented.
+    remediation_steps:
+      - Enable and retain patch deployment logging on {hostname} via the endpoint
+        management platform.
+      - Reconstruct the current patch level from the local update history and record it
+        against the asset.
+      - Bring {hostname} into the organisation's change-management process so future
+        updates generate an auditable record.
+
+  # ===============================================================================
+  # SECURE CONFIGURATION
+  # ===============================================================================
+
+  - rule_id: CE-SECCONF-001
+    issue_code: DEFAULT_CREDENTIALS
+    title: Vendor default credentials still in use
+    ce_pillar: Secure Configuration
+    control_mappings:
+      - framework: Cyber Essentials
+        control_id: Secure Configuration
+        control_name: Secure Configuration
+        mapping_type: Primary
+        verified: true
+        source: Appendix Aii - CE pillar column
+      - framework: ISO/IEC 27001:2022
+        control_id: A.8.9
+        control_name: Configuration management
+        mapping_type: Primary
+        verified: true
+        source: Appendix Aii
+        matrix_rows: [Secure Configuration]
+      # UNVERIFIED - confirm against George interim-report matrix (Appendix Ai/Aii)
+      # Rationale: a vendor default password is authentication information that has not
+      # been managed, which reads onto A.5.17 as well as A.8.9. Best-effort only.
+      - framework: ISO/IEC 27001:2022
+        control_id: A.5.17
+        control_name: Authentication information
+        mapping_type: Secondary
+        verified: false
+        matrix_rows: [Secure Configuration]
+    explanation_template: >-
+      Host {hostname} is still using vendor default credentials. Default accounts and
+      passwords are published in vendor documentation and are among the first things an
+      attacker tries, so the asset can be accessed without any real authentication.
+      This fails the Cyber Essentials secure-configuration requirement to change or
+      disable default credentials before deployment, and breaches ISO/IEC 27001:2022
+      Annex A.8.9 (Configuration management).
+    remediation_steps:
+      - Change every vendor default password on {hostname} to a unique credential held
+        in the organisation's password manager.
+      - Disable or rename default accounts that are not required for operation.
+      - Add {hostname} to the hardened build standard so the default credential cannot
+        be reintroduced by a rebuild.
+
+  - rule_id: CE-SECCONF-002
+    issue_code: INSECURE_PROTOCOL
+    title: Insecure or cleartext protocol enabled
+    ce_pillar: Secure Configuration
+    control_mappings:
+      - framework: Cyber Essentials
+        control_id: Secure Configuration
+        control_name: Secure Configuration
+        mapping_type: Primary
+        verified: true
+        source: Appendix Aii - CE pillar column
+      - framework: ISO/IEC 27001:2022
+        control_id: A.8.27
+        control_name: Secure system architecture
+        mapping_type: Secondary
+        verified: true
+        source: Appendix Aii
+        matrix_rows: [Secure Configuration]
+      # UNVERIFIED - confirm against George interim-report matrix (Appendix Ai/Aii)
+      # Rationale: cleartext protocols expose credentials and session data in transit,
+      # which is a networks-security concern as well as an architectural one.
+      # Best-effort only.
+      - framework: ISO/IEC 27001:2022
+        control_id: A.8.20
+        control_name: Networks security
+        mapping_type: Secondary
+        verified: false
+        matrix_rows: [Secure Configuration]
+    explanation_template: >-
+      Host {hostname} exposes a service over an insecure or cleartext protocol.
+      Credentials and session data carried over such protocols can be read or modified by
+      anyone able to observe the traffic path, so the confidentiality of the session
+      cannot be relied on. This fails the Cyber Essentials secure-configuration
+      requirement to remove or disable unnecessary and insecure services, and breaches
+      ISO/IEC 27001:2022 Annex A.8.27 (Secure system architecture).
+    remediation_steps:
+      - Disable the cleartext service on {hostname} and replace it with its encrypted
+        equivalent (for example SSH in place of Telnet, HTTPS in place of HTTP).
+      - Where the legacy protocol cannot be removed, restrict it to a management network
+        and document the compensating control.
+      - Re-scan {hostname} to confirm the insecure listener is no longer present.
+
+  # ===============================================================================
+  # USER ACCESS CONTROL
+  # ===============================================================================
+
+  - rule_id: CE-UAC-001
+    issue_code: EXCESSIVE_PRIVILEGES
+    title: Account holds privileges beyond its business need
+    ce_pillar: User Access Control
+    control_mappings:
+      - framework: Cyber Essentials
+        control_id: User Access Control
+        control_name: User Access Control
+        mapping_type: Primary
+        verified: true
+        source: Appendix Aii - CE pillar column
+      - framework: ISO/IEC 27001:2022
+        control_id: A.5.15
+        control_name: Access control
+        mapping_type: Primary
+        verified: true
+        source: Appendix Aii
+        matrix_rows: [User Access Control]
+      # UNVERIFIED - confirm against George interim-report matrix (Appendix Ai/Aii)
+      # Rationale: A.8.16 requires privileged activity to be monitored; over-privileged
+      # accounts are the population that monitoring is meant to cover. Best-effort only.
+      - framework: ISO/IEC 27001:2022
+        control_id: A.8.16
+        control_name: Monitoring activities
+        mapping_type: Secondary
+        verified: false
+        matrix_rows: [User Access Control]
+    explanation_template: >-
+      An account on {hostname} holds administrative or elevated privileges beyond what
+      its role requires. Excess privilege widens the blast radius of any compromise of
+      that account, because everything the account can reach an attacker can reach. This
+      fails the Cyber Essentials user-access-control requirement to grant least
+      privilege, and breaches ISO/IEC 27001:2022 Annex A.5.15 (Access control).
+    remediation_steps:
+      - Review the account's role on {hostname} and remove privileges not required for
+        that role.
+      - Move any genuinely required administrative access to a separate named admin
+        account, kept out of day-to-day use.
+      - Add {hostname} to the periodic access-review cycle so privilege creep is caught.
+
+  - rule_id: CE-UAC-002
+    issue_code: STALE_ACCOUNT
+    title: Dormant or unremoved user account
+    ce_pillar: User Access Control
+    control_mappings:
+      - framework: Cyber Essentials
+        control_id: User Access Control
+        control_name: User Access Control
+        mapping_type: Primary
+        verified: true
+        source: Appendix Aii - CE pillar column
+      - framework: ISO/IEC 27001:2022
+        control_id: A.5.16
+        control_name: Identity management
+        mapping_type: Secondary
+        verified: true
+        source: Appendix Aii
+        matrix_rows: [User Access Control]
+    explanation_template: >-
+      Host {hostname} carries a user account that is dormant or belongs to a leaver and
+      has not been removed. Unused accounts are rarely monitored and their credentials
+      are rarely rotated, so they are a quiet route back into the estate after someone
+      has left. This fails the Cyber Essentials user-access-control requirement to remove
+      access promptly when it is no longer needed, and breaches ISO/IEC 27001:2022
+      Annex A.5.16 (Identity management).
+    remediation_steps:
+      - Disable the dormant account on {hostname} and confirm with the account owner's
+        line manager before deletion.
+      - Reconcile the local account list on {hostname} against the current HR leavers
+        feed.
+      - Implement an automatic disable threshold for accounts inactive beyond an agreed
+        period.
+
+  - rule_id: CE-UAC-003
+    issue_code: PASSWORD_POLICY_NONCOMPLIANCE
+    title: Password policy does not meet requirements
+    ce_pillar: User Access Control
+    control_mappings:
+      - framework: Cyber Essentials
+        control_id: User Access Control
+        control_name: User Access Control
+        mapping_type: Primary
+        verified: true
+        source: Appendix Aii - CE pillar column
+      - framework: ISO/IEC 27001:2022
+        control_id: A.5.17
+        control_name: Authentication information
+        mapping_type: Primary
+        verified: true
+        source: Appendix Aii
+        matrix_rows: [User Access Control]
+    explanation_template: >-
+      The password policy applied to {hostname} does not meet the required minimum. Weak
+      or short passwords are recoverable by brute force or credential stuffing within a
+      practical timeframe, so the password stops being a meaningful barrier. This fails
+      the Cyber Essentials password-based authentication requirement, and breaches
+      ISO/IEC 27001:2022 Annex A.5.17 (Authentication information).
+    remediation_steps:
+      - Enforce the Cyber Essentials minimum password standard on {hostname} through
+        Group Policy or the equivalent configuration baseline.
+      - Enable throttling or lockout after repeated failed authentication attempts.
+      - Force a reset of any existing password that does not meet the new standard.
+
+  - rule_id: CE-UAC-004
+    issue_code: MFA_ABSENT
+    title: Multi-factor authentication not enabled
+    ce_pillar: User Access Control
+    control_mappings:
+      - framework: Cyber Essentials
+        control_id: User Access Control
+        control_name: User Access Control
+        mapping_type: Primary
+        verified: true
+        source: Appendix Aii - CE pillar column
+      - framework: ISO/IEC 27001:2022
+        control_id: A.8.5
+        control_name: Secure authentication
+        mapping_type: Primary
+        verified: true
+        source: Appendix Aii
+        matrix_rows: [User Access Control]
+    explanation_template: >-
+      Access to {hostname} is available without multi-factor authentication. Where a
+      single stolen or guessed password is all that stands between an attacker and the
+      account, any credential leak becomes an immediate access route. This fails the
+      Cyber Essentials requirement for multi-factor authentication on administrative and
+      internet-facing access, and breaches ISO/IEC 27001:2022 Annex A.8.5 (Secure
+      authentication).
+    remediation_steps:
+      - Enable multi-factor authentication for all administrative access to {hostname}.
+      - Enforce multi-factor authentication on any internet-facing or remote access path
+        to the asset.
+      - Record an exception with a compensating control for any account that genuinely
+        cannot support a second factor.
+
+  # ===============================================================================
+  # FIREWALLS
+  # ===============================================================================
+
+  - rule_id: CE-FW-001
+    issue_code: UNRESTRICTED_INBOUND
+    title: Unrestricted inbound firewall rule
+    ce_pillar: Firewalls
+    control_mappings:
+      - framework: Cyber Essentials
+        control_id: Firewalls
+        control_name: Firewalls
+        mapping_type: Primary
+        verified: true
+        source: Appendix Aii - CE pillar column
+      - framework: ISO/IEC 27001:2022
+        control_id: A.8.20
+        control_name: Networks security
+        mapping_type: Primary
+        verified: true
+        source: Appendix Aii
+        matrix_rows: [Firewalls]
+    explanation_template: >-
+      Host {hostname} is reachable through an inbound firewall rule that is not
+      restricted to a known source. An any-source rule means the service is exposed to
+      the whole internet rather than to the parties that need it, so every weakness
+      behind that rule is directly reachable. This fails the Cyber Essentials boundary
+      firewall requirement to block unauthenticated inbound connections by default, and
+      breaches ISO/IEC 27001:2022 Annex A.8.20 (Networks security).
+    remediation_steps:
+      - Restrict the inbound rule protecting {hostname} to the specific source addresses
+        with a documented business need.
+      - Remove the any-source rule once the restricted rule is confirmed working.
+      - Record the business justification and approval for any inbound rule that must
+        remain open.
+
+  - rule_id: CE-FW-002
+    issue_code: UNMANAGED_SERVICE_EXPOSED
+    title: Unmanaged service exposed at the boundary
+    ce_pillar: Firewalls
+    control_mappings:
+      - framework: Cyber Essentials
+        control_id: Firewalls
+        control_name: Firewalls
+        mapping_type: Primary
+        verified: true
+        source: Appendix Aii - CE pillar column
+      - framework: ISO/IEC 27001:2022
+        control_id: A.8.21
+        control_name: Security of network services
+        mapping_type: Secondary
+        verified: true
+        source: Appendix Aii
+        matrix_rows: [Firewalls]
+      # UNVERIFIED - confirm against George interim-report matrix (Appendix Ai/Aii)
+      # Rationale: a service exposed without an owner is also outside the managed
+      # configuration baseline, which reads onto A.8.9. Best-effort only.
+      - framework: ISO/IEC 27001:2022
+        control_id: A.8.9
+        control_name: Configuration management
+        mapping_type: Secondary
+        verified: false
+        matrix_rows: [Firewalls]
+    explanation_template: >-
+      Host {hostname} exposes a network service that is not under active management. An
+      unmanaged service has no owner tracking its patch level, its configuration or its
+      continued business need, so it drifts out of the security baseline unnoticed while
+      remaining reachable. This fails the Cyber Essentials requirement that only
+      necessary, managed services are exposed, and breaches ISO/IEC 27001:2022
+      Annex A.8.21 (Security of network services).
+    remediation_steps:
+      - Identify the owner and business need for the exposed service on {hostname}.
+      - Decommission the service if no current business need is confirmed.
+      - Where the service is required, bring it under the standard management, patching
+        and monitoring baseline.
+
+  - rule_id: CE-FW-003
+    issue_code: FLAT_NETWORK
+    title: No network segregation between asset groups
+    ce_pillar: Firewalls
+    control_mappings:
+      - framework: Cyber Essentials
+        control_id: Firewalls
+        control_name: Firewalls
+        mapping_type: Primary
+        verified: true
+        source: Appendix Aii - CE pillar column
+      - framework: ISO/IEC 27001:2022
+        control_id: A.8.22
+        control_name: Segregation of networks
+        mapping_type: Secondary
+        verified: true
+        source: Appendix Aii
+        matrix_rows: [Firewalls]
+      # UNVERIFIED - confirm against George interim-report matrix (Appendix Ai/Aii)
+      # Rationale: the absence of segmentation is an architectural design decision, so
+      # A.8.27 plausibly applies from the Firewalls row as well as the Secure
+      # Configuration row. Best-effort only.
+      - framework: ISO/IEC 27001:2022
+        control_id: A.8.27
+        control_name: Secure system architecture
+        mapping_type: Secondary
+        verified: false
+        matrix_rows: [Firewalls]
+    explanation_template: >-
+      Host {hostname} sits on a flat network with no segregation from unrelated asset
+      groups. On a flat network the compromise of any single host gives an attacker
+      unfiltered lateral reach to every other host on the same segment, so one foothold
+      becomes estate-wide access. This weakens the Cyber Essentials firewall boundary
+      requirement, and breaches ISO/IEC 27001:2022 Annex A.8.22 (Segregation of
+      networks).
+    remediation_steps:
+      - Place {hostname} in a network segment scoped to its function and data
+        sensitivity.
+      - Apply filtering between segments so only required flows cross the boundary.
+      - Verify segmentation with an east-west connectivity test rather than assuming the
+        rule set is correct.
+
+  # ===============================================================================
+  # MALWARE PROTECTION
+  # ===============================================================================
+
+  - rule_id: CE-MAL-001
+    issue_code: AV_SIGNATURE_OUTDATED
+    title: Anti-malware signatures out of date
+    ce_pillar: Malware Protection
+    control_mappings:
+      - framework: Cyber Essentials
+        control_id: Malware Protection
+        control_name: Malware Protection
+        mapping_type: Primary
+        verified: true
+        source: Appendix Aii - CE pillar column
+      - framework: ISO/IEC 27001:2022
+        control_id: A.8.7
+        control_name: Protection against malware
+        mapping_type: Primary
+        verified: true
+        source: Appendix Aii
+        matrix_rows: [Malware Protection]
+      # UNVERIFIED - confirm against George interim-report matrix (Appendix Ai/Aii)
+      # Rationale: A.8.23 is in the stated control universe but has no verified row.
+      # Web filtering is a complementary malware-delivery control, so it is placed here
+      # as a best effort. This is the weakest inference in the file - confirm first.
+      - framework: ISO/IEC 27001:2022
+        control_id: A.8.23
+        control_name: Web filtering
+        mapping_type: Secondary
+        verified: false
+        matrix_rows: [Malware Protection]
+    explanation_template: >-
+      The anti-malware signatures on {hostname} are out of date. Signature-based
+      detection only recognises what it has definitions for, so an engine running old
+      definitions will pass known, currently circulating malware as clean. This fails the
+      Cyber Essentials malware-protection requirement to keep anti-malware software
+      updated, and breaches ISO/IEC 27001:2022 Annex A.8.7 (Protection against malware).
+    remediation_steps:
+      - Force a signature update on {hostname} and confirm the definition date is
+        current.
+      - Investigate why automatic updates stopped, since a stale agent usually indicates
+        a connectivity or licensing fault rather than a one-off miss.
+      - Run a full scan once definitions are current, to cover the period the host was
+        unprotected.
+      - Alert on definition age across the estate so this is caught before assessment.
+
+  - rule_id: CE-MAL-002
+    issue_code: NO_EDR_INGESTION
+    title: Endpoint telemetry not reaching the monitoring platform
+    ce_pillar: Malware Protection
+    control_mappings:
+      - framework: Cyber Essentials
+        control_id: Malware Protection
+        control_name: Malware Protection
+        mapping_type: Primary
+        verified: true
+        source: Appendix Aii - CE pillar column
+      - framework: ISO/IEC 27001:2022
+        control_id: A.8.16
+        control_name: Monitoring activities
+        mapping_type: Secondary
+        verified: true
+        source: Appendix Aii
+        matrix_rows: [Malware Protection]
+    explanation_template: >-
+      Endpoint detection telemetry from {hostname} is not being ingested by the
+      monitoring platform. The agent may be running locally, but if its telemetry never
+      arrives centrally then nobody is watching it, and a detection nobody sees is not a
+      detection. This weakens the Cyber Essentials malware-protection requirement, and
+      breaches ISO/IEC 27001:2022 Annex A.8.16 (Monitoring activities).
+    remediation_steps:
+      - Confirm the endpoint agent on {hostname} is installed, running and licensed.
+      - Check network egress from {hostname} to the monitoring platform is permitted.
+      - Add an ingestion-gap alert so a host that stops reporting is flagged rather than
+        assumed healthy.
+
+  # ===============================================================================
+  # CYBER ESSENTIALS PLUS - assessment activities
+  # ===============================================================================
+
+  - rule_id: CEP-VULN-001
+    issue_code: AUTH_SCAN_FAILURE
+    title: Authenticated vulnerability scan failed or returned findings
+    ce_pillar: CE+ Vulnerability Scan
+    control_mappings:
+      - framework: Cyber Essentials Plus
+        control_id: Vulnerability Scan
+        control_name: Vulnerability Scan
+        mapping_type: Primary
+        verified: true
+        source: Appendix Aii - CE pillar column
+      - framework: ISO/IEC 27001:2022
+        control_id: A.8.8
+        control_name: Management of technical vulnerabilities
+        mapping_type: Primary
+        verified: true
+        source: Appendix Aii
+        matrix_rows: [CE+ Vulnerability Scan]
+      # UNVERIFIED - confirm against George interim-report matrix (Appendix Ai/Aii)
+      # Rationale: a scan that fails silently is also a gap in monitoring coverage.
+      # Best-effort only.
+      - framework: ISO/IEC 27001:2022
+        control_id: A.8.16
+        control_name: Monitoring activities
+        mapping_type: Secondary
+        verified: false
+        matrix_rows: [CE+ Vulnerability Scan]
+    # NOTE: this template deliberately does NOT reference {cve_id}/{cvss_score}/{days}.
+    # An authenticated scan can fail without returning any CVE at all (the scan itself
+    # errored), so the asset may carry this issue code with an empty vulnerability list.
+    # Citing a CVE here would render "None" into the analyst-facing text in that case.
+    # The engine still attaches triggering_cve/triggering_cvss when a CVE is present, so
+    # the UI can show it as metadata without the prose depending on it.
+    # CE-PATCH-001 is different: a missing patch always implies a specific CVE, and the
+    # FINDING #017 reference card requires those placeholders.
+    explanation_template: >-
+      The Cyber Essentials Plus authenticated vulnerability scan against {hostname} failed
+      or returned outstanding findings. A failed scan is not a pass: it means the asset's
+      vulnerability position is unproven at the point of assessment, so the host cannot be
+      shown to be free of known technical vulnerabilities. This fails the Cyber Essentials
+      Plus vulnerability-scan criterion, and breaches ISO/IEC 27001:2022 Annex A.8.8
+      (Management of technical vulnerabilities).
+    remediation_steps:
+      - Resolve the outstanding vulnerabilities reported against {hostname}, worst first.
+      - Re-run the authenticated scan and retain the clean result as assessment evidence.
+      - Where the scan itself failed, fix the underlying scan fault before re-testing, so
+        the clean result reflects the host and not a broken scan.
+
+  - rule_id: CEP-AUDIT-001
+    issue_code: INSUFFICIENT_SCAN_CREDENTIALS
+    title: Scan credentials insufficient for an authenticated audit
+    ce_pillar: CE+ Authenticated Audit
+    control_mappings:
+      - framework: Cyber Essentials Plus
+        control_id: Authenticated Audit
+        control_name: Authenticated Audit
+        mapping_type: Primary
+        verified: true
+        source: Appendix Aii - CE pillar column
+      - framework: ISO/IEC 27001:2022
+        control_id: A.5.15
+        control_name: Access control
+        mapping_type: Secondary
+        verified: true
+        source: Appendix Aii
+        matrix_rows: [CE+ Authenticated Audit]
+      # UNVERIFIED - confirm against George interim-report matrix (Appendix Ai/Aii)
+      # Rationale: provisioning and managing the scan account's credential is
+      # authentication-information handling under A.5.17. Best-effort only.
+      - framework: ISO/IEC 27001:2022
+        control_id: A.5.17
+        control_name: Authentication information
+        mapping_type: Secondary
+        verified: false
+        matrix_rows: [CE+ Authenticated Audit]
+    explanation_template: >-
+      The credentials supplied for the authenticated audit of {hostname} were insufficient
+      to complete the assessment. An audit that cannot authenticate only sees the host
+      from the outside, so it under-reports: the result looks cleaner than the host
+      actually is. This fails the Cyber Essentials Plus authenticated-audit requirement,
+      and breaches ISO/IEC 27001:2022 Annex A.5.15 (Access control).
+    remediation_steps:
+      - Provision a scan account on {hostname} with the access level the audit requires.
+      - Confirm the account can authenticate and enumerate before the assessment window
+        opens.
+      - Restrict the scan account to assessment use and rotate its credential afterwards.

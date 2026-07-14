@@ -54,6 +54,20 @@ On this machine, use the project virtualenv for every command:
 Work through the stages using the sidebar (1 → 3), review in the **Review** tab (4), then
 compile in the **Report** tab (5).
 
+### Verifying report integrity
+
+The compiled PDF carries a SHA-256 integrity hash, shown in the **Report** tab and printed
+in the report footer. To confirm a downloaded PDF has not been altered, re-hash it and
+compare against that value. Use whichever command matches your platform:
+
+```bash
+# Linux / macOS / Streamlit Cloud
+sha256sum <report>.pdf
+
+# Windows (PowerShell / cmd)
+certutil -hashfile <report>.pdf SHA256
+```
+
 ---
 
 ## The Article 22 gate — the core design control
