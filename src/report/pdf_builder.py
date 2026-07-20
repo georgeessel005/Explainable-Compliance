@@ -30,6 +30,7 @@ from __future__ import annotations
 import calendar
 import contextlib
 import os
+import unicodedata
 from datetime import datetime
 from typing import Iterator, Optional
 from xml.sax.saxutils import escape
@@ -68,6 +69,7 @@ from src.report.integrity import (
     effective_explanation_text,
     is_committed,
     is_escalated,
+    normalise_organisation,
     sha256_of_file,
 )
 
@@ -147,6 +149,16 @@ def _styles() -> dict[str, ParagraphStyle]:
             "RptSubtitle", parent=base["Normal"], fontSize=11, leading=15,
             textColor=_MUTED, alignment=TA_LEFT, spaceAfter=4,
         ),
+        # Title-page ORGANIZATION block. Only instantiated into the story when an
+        # organisation was supplied, so a report without one is unchanged.
+        "orglabel": ParagraphStyle(
+            "RptOrgLabel", parent=base["Normal"], fontName="Helvetica-Bold",
+            fontSize=8, leading=11, textColor=_MUTED, spaceAfter=2,
+        ),
+        "org": ParagraphStyle(
+            "RptOrg", parent=base["Normal"], fontName="Helvetica-Bold",
+            fontSize=17, leading=21, textColor=_ACCENT, spaceAfter=2,
+        ),
         "h2": ParagraphStyle(
             "RptH2", parent=base["Heading2"], fontSize=13, leading=17,
             textColor=_ACCENT, spaceBefore=10, spaceAfter=6,
@@ -161,6 +173,12 @@ def _styles() -> dict[str, ParagraphStyle]:
         ),
         "cell": ParagraphStyle(
             "RptCell", parent=base["Normal"], fontSize=8, leading=10.5,
+        ),
+        # Wrapping style for the metadata table's value column. Matches the 9pt
+        # Helvetica the table's own FONTSIZE gives its raw cells, so a wrapped value
+        # sits flush with the unwrapped rows above and below it.
+        "metacell": ParagraphStyle(
+            "RptMetaCell", parent=base["Normal"], fontSize=9, leading=12,
         ),
         "mono": ParagraphStyle(
             "RptMono", parent=base["Normal"], fontName="Courier", fontSize=7.5,
@@ -182,6 +200,89 @@ def _styles() -> dict[str, ParagraphStyle]:
 def _p(text: object, style: ParagraphStyle) -> Paragraph:
     """Paragraph from arbitrary text, XML-escaped so stray '&'/'<' cannot break it."""
     return Paragraph(escape("" if text is None else str(text)), style)
+
+
+# ---------- honest rendering of non-Latin-1 text ----------
+#
+# ReportLab's built-in Type1 faces (Helvetica, Courier, Times) are single-byte
+# fonts: they can only draw the ~224 characters of their encoding vector. Anything
+# outside it is NOT drawn - ReportLab silently substitutes a fallback face and emits
+# visually meaningless glyphs (an organisation named "... Ltd <CJK>" printed as
+# "... Ltd nn"). That is a correctness problem specific to this report, because the
+# tamper-seal demonstration invites the reader to compare the PRINTED organisation
+# name against the SEALED one. The digest always covers the true string, so the seal
+# itself was never wrong - but a page that cannot show what was sealed makes that
+# comparison misleading.
+#
+# The obvious fix - embed a TrueType face with wider coverage - was evaluated and
+# rejected. The only TTFs ReportLab bundles are Vera/VeraBd/VeraIt/VeraBI (283
+# glyphs: Latin-1 plus a fragment of Latin Extended-A) and a 9-glyph HarfBuzz test
+# font. None carries Cyrillic, Greek or CJK, so embedding Vera would still drop the
+# realistic non-Latin cases while adding an embedded-font-subsetting step to a build
+# whose byte-for-byte determinism is a hard requirement. Instead the name is degraded
+# HONESTLY: every character the face cannot draw is replaced by a visible marker and
+# the page states that the rendering is lossy and prints the exact sealed value in an
+# unambiguous ASCII form. Nothing is ever dropped silently.
+
+#: Codec matching the encoding vector ReportLab gives the built-in Type1 faces.
+#: WinAnsi is the default; MacRoman is the only other option ReportLab offers.
+_TYPE1_CODEC = "mac_roman" if "MacRoman" in rl_config.defaultEncoding else "cp1252"
+
+
+def _is_renderable(char: str) -> bool:
+    """True if a built-in Type1 face can actually draw ``char``.
+
+    cp1252 leaves five slots undefined (0x81, 0x8D, 0x8F, 0x90, 0x9D); Python's
+    codec rejects them, which is exactly the answer we want.
+    """
+    try:
+        char.encode(_TYPE1_CODEC)
+    except UnicodeEncodeError:
+        return False
+    return True
+
+
+def _codepoint_marker(char: str) -> str:
+    """``'東'`` -> ``'[U+6771]'``. Visible, unambiguous, reversible by the reader."""
+    return f"[U+{ord(char):04X}]"
+
+
+def _transliterate(char: str) -> str:
+    """Best readable Type1-drawable stand-in for one unrenderable character.
+
+    Tries canonical decomposition first, so an accented Latin letter degrades to its
+    base letter (``'ź'`` -> ``'z'``) rather than to a codepoint escape. Characters
+    with no drawable base - Cyrillic, Greek, CJK, emoji - fall back to the marker.
+    """
+    base = "".join(
+        c
+        for c in unicodedata.normalize("NFKD", char)
+        if not unicodedata.combining(c) and _is_renderable(c)
+    )
+    return base or _codepoint_marker(char)
+
+
+def _render_safe(text: str) -> tuple[str, bool]:
+    """``text`` reduced to what the page can draw, plus whether anything was lost.
+
+    Returns ``(displayable_text, lossy)``. When ``lossy`` is False the text is
+    returned unchanged, so the common all-Latin-1 case is byte-for-byte what it was
+    before this function existed.
+    """
+    if all(_is_renderable(c) for c in text):
+        return text, False
+    return "".join(c if _is_renderable(c) else _transliterate(c) for c in text), True
+
+
+def _ascii_escape(text: str) -> str:
+    """``text`` with every non-printable-ASCII character shown as ``[U+XXXX]``.
+
+    The exact sealed value in a form that survives a Latin-1 font, so a reader can
+    still compare the printed name against the string the digest committed to.
+    """
+    return "".join(
+        c if 0x20 <= ord(c) < 0x7F else _codepoint_marker(c) for c in text
+    )
 
 
 # ---------- footer ----------
@@ -218,7 +319,7 @@ def _decision_label(decision: Optional[AnalystDecision]) -> str:
     return _DECISION_LABELS.get(decision.decision, decision.decision.value)
 
 
-def _title_block(report, digest, counts, styles) -> list:
+def _title_block(report, digest, counts, styles, organisation=None) -> list:
     committed, escalated, pending = counts
     flowables: list = [
         _p("Compliance Assessment Report", styles["title"]),
@@ -226,18 +327,60 @@ def _title_block(report, digest, counts, styles) -> list:
             "Cyber Essentials, Cyber Essentials Plus and ISO/IEC 27001:2022 Annex A",
             styles["subtitle"],
         ),
-        Spacer(1, 8 * mm),
+    ]
+
+    # The organisation the assessment was carried out for, as a headline field. Omitted
+    # entirely when not supplied, so the title page is byte-identical to before.
+    org_display, org_lossy = (
+        _render_safe(organisation) if organisation is not None else ("", False)
+    )
+    if organisation is not None:
+        flowables += [
+            Spacer(1, 6 * mm),
+            _p("ORGANIZATION", styles["orglabel"]),
+            _p(org_display, styles["org"]),
+            _p(
+                "This report is issued in respect of the organisation named above. "
+                "The name forms part of the sealed content covered by the SHA-256 "
+                "below, so altering it invalidates the seal.",
+                styles["subtitle"],
+            ),
+        ]
+        if org_lossy:
+            # Say so on the page rather than letting the reader assume the printed
+            # name IS the sealed name. Without this the tamper-seal comparison the
+            # report invites would be made against a silently truncated string.
+            flowables += [
+                _p(
+                    "Lossy rendering: the organisation name contains characters this "
+                    "report's font cannot draw. The name shown above is a transliteration "
+                    "in which each such character appears either as its unaccented base "
+                    "letter or as a [U+XXXX] codepoint marker. The SHA-256 seal covers "
+                    "the ORIGINAL name exactly as supplied, not this rendering. The exact "
+                    "sealed value is printed below for comparison.",
+                    styles["note"],
+                ),
+                _p(_ascii_escape(organisation), styles["mono"]),
+            ]
+
+    flowables.append(Spacer(1, 8 * mm))
+
+    meta_rows = [["Report ID", report.report_id]]
+    if organisation is not None:
+        # Paragraph, not a raw string: raw Table cells are a single unwrapped text
+        # run, so a long organisation name measured wider than the 105mm column and
+        # ran straight off the right edge of the page instead of wrapping.
+        meta_rows.append(["Organisation", _p(org_display, styles["metacell"])])
+    meta_rows += [
+        ["Generated at", report.generated_at.isoformat()],
+        ["Findings assessed", str(len(report.findings))],
+        ["Committed to conclusion", str(committed)],
+        ["Escalated (excluded)", str(escalated)],
+        ["Awaiting decision (excluded)", str(pending)],
     ]
 
     meta = Table(
-        [
-            ["Report ID", report.report_id],
-            ["Generated at", report.generated_at.isoformat()],
-            ["Findings assessed", str(len(report.findings))],
-            ["Committed to conclusion", str(committed)],
-            ["Escalated (excluded)", str(escalated)],
-            ["Awaiting decision (excluded)", str(pending)],
-        ],
+        meta_rows,
         colWidths=[55 * mm, 105 * mm],
     )
     meta.setStyle(
@@ -538,7 +681,12 @@ def _escalated_section(report, decisions, explanations, styles) -> list:
 
 # ---------- public API ----------
 
-def compile_pdf(report: ComplianceReport, out_path: str) -> str:
+def compile_pdf(
+    report: ComplianceReport,
+    out_path: str,
+    *,
+    organisation: Optional[str] = None,
+) -> str:
     """Render ``report`` to a PDF at ``out_path`` and return ``out_path``.
 
     The PDF bytes are a pure function of the report's content: building the same
@@ -554,6 +702,12 @@ def compile_pdf(report: ComplianceReport, out_path: str) -> str:
     (the same predicate the Streamlit app uses), so no compliant-looking PDF can be
     produced over an unresolved human objection, whatever the caller. Nothing is
     written to disk when the gate blocks.
+
+    ``organisation`` is keyword-only and optional. When supplied it is rendered as a
+    headline field on the title page AND folded into the content digest, so the
+    footer SHA-256 seals the organisation name along with the findings: editing the
+    name and re-verifying breaks the seal. When omitted, the PDF is byte-identical
+    to what this function produced before the parameter existed.
     """
     if not can_generate_report(report.decisions):
         open_ids = escalated_finding_ids(report.decisions)
@@ -569,9 +723,10 @@ def compile_pdf(report: ComplianceReport, out_path: str) -> str:
         os.makedirs(directory, exist_ok=True)
 
     styles = _styles()
+    org = normalise_organisation(organisation)
     decisions = resolve_decisions(report.decisions)
     explanations = {e.finding_id: e for e in report.explanations}
-    digest = content_digest(report)
+    digest = content_digest(report, organisation=org)
 
     committed = [f for f in report.findings if is_committed(decisions.get(f.finding_id))]
     escalated_count = sum(
@@ -581,7 +736,11 @@ def compile_pdf(report: ComplianceReport, out_path: str) -> str:
 
     story: list = []
     story += _title_block(
-        report, digest, (len(committed), escalated_count, pending_count), styles
+        report,
+        digest,
+        (len(committed), escalated_count, pending_count),
+        styles,
+        organisation=org,
     )
     story.append(PageBreak())
     story += _summary_table(report, decisions, styles)
@@ -655,7 +814,12 @@ def compile_pdf(report: ComplianceReport, out_path: str) -> str:
     return out_path
 
 
-def build_and_hash(report: ComplianceReport, out_path: str) -> str:
+def build_and_hash(
+    report: ComplianceReport,
+    out_path: str,
+    *,
+    organisation: Optional[str] = None,
+) -> str:
     """Compile the PDF, hash its bytes and stamp the result onto ``report``.
 
     Convenience wrapper over :func:`compile_pdf` plus
@@ -666,8 +830,11 @@ def build_and_hash(report: ComplianceReport, out_path: str) -> str:
     Note ``report.sha256_hash`` is the *artefact* digest (the PDF file), whereas
     the footer carries the *content* digest, which is computable before the file
     exists. A file cannot contain its own hash.
+
+    ``organisation`` is forwarded verbatim to :func:`compile_pdf`; omitting it
+    reproduces the pre-existing behaviour exactly.
     """
-    compile_pdf(report, out_path)
+    compile_pdf(report, out_path, organisation=organisation)
     digest = sha256_of_file(out_path)
     report.sha256_hash = digest
     report.pdf_path = out_path

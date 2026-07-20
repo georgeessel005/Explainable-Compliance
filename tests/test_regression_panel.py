@@ -58,12 +58,32 @@ def _find_button(at, label_part: str):
 
 
 def _drive_stages_1_to_3(at):
-    """Click the real sidebar buttons through Stage 1 -> 2 -> 3."""
-    _find_button(at, "Load synthetic data").click()
+    """Click the real sidebar button that runs Stage 1 -> 2 -> 3.
+
+    The three separate stage buttons were merged into one ("Run Stages 1-3") in the
+    CompliancePilot reskin. Stage 4 is deliberately still NOT part of it.
+    """
+    _find_button(at, "Run Stages 1-3").click()
     at.run()
-    _find_button(at, "Run mapping engine").click()
+    assert not at.exception, [str(e) for e in at.exception]
+
+
+def _decide(at, finding_id: str, label: str):
+    """Take a REAL analyst decision through the per-finding Decision selectbox.
+
+    Two AppTest quirks are handled here, and both matter:
+
+    1. Recording a decision ends the run in ``st.rerun()``, so a button ``.click()``
+       issued straight after a ``.select()`` is swallowed. The bare ``at.run()``
+       below flushes that pending rerun so the next click lands.
+    2. The selectbox re-asserts its selection from the finding's status on every
+       rerun, so a decision injected directly into session_state can be overridden.
+       Decisions in these tests therefore go through this widget (or the bulk
+       buttons), never through session_state — which is the whole point of the
+       crown-jewel tests: they must exercise the real user interaction.
+    """
+    at.selectbox(key=f"decision__{finding_id}").select(label)
     at.run()
-    _find_button(at, "Generate explanations").click()
     at.run()
     assert not at.exception, [str(e) for e in at.exception]
 
@@ -102,16 +122,18 @@ def test_real_approve_click_persists_and_advances_coverage():
     assert before["reviewed_count"] == 0
     assert before["outstanding_count"] == 309
 
-    # A REAL Approve click on the first finding's card button.
+    # A REAL Approve interaction on the first finding's card: the analyst picks
+    # "Approve" in that card's Decision selectbox. Nothing is injected into
+    # session_state -- driving the widget is the whole point of this test.
     first_fid = findings[0].finding_id
-    at.button(key=f"approve__{first_fid}").click()
-    at.run()
-    assert not at.exception
+    selector = at.selectbox(key=f"decision__{first_fid}")
+    assert selector.value == "— Select —", "a fresh finding must start undecided"
+    _decide(at, first_fid, "Approve")
 
     # The decision actually persisted into the LIVE session list...
     decisions = at.session_state["decisions"]
     assert len(decisions) == 1, (
-        "BUG: the analyst's Approve click did not persist -- the review tab is "
+        "BUG: the analyst's Approve selection did not persist -- the review tab is "
         "mutating a throwaway `... or []` list again"
     )
     assert decisions[0].finding_id == first_fid
@@ -133,13 +155,11 @@ def test_real_escalate_click_blocks_gate_via_ui_state():
     _drive_stages_1_to_3(at)
     findings = at.session_state["findings"]
 
-    # Approve one finding, escalate a different one -- both via real card buttons.
-    at.button(key=f"approve__{findings[0].finding_id}").click()
-    at.run()
+    # Approve one finding, escalate a different one -- both via the real card
+    # Decision selectboxes (never by injecting into session_state).
+    _decide(at, findings[0].finding_id, "Approve")
     escalated_fid = findings[1].finding_id
-    at.button(key=f"escalate__{escalated_fid}").click()
-    at.run()
-    assert not at.exception
+    _decide(at, escalated_fid, "Escalate")
 
     decisions = at.session_state["decisions"]
     assert len(decisions) == 2
@@ -148,7 +168,7 @@ def test_real_escalate_click_blocks_gate_via_ui_state():
     assert status_of(escalated_fid, decisions) == FindingStatus.ESCALATED
 
     # And the Stage 5 compile button is consequently disabled.
-    compile_button = _find_button(at, "Compile report")
+    compile_button = _find_button(at, "Generate Sealed PDF Report")
     assert compile_button.disabled
 
 
@@ -430,9 +450,9 @@ def test_bulk_approve_records_individual_decisions_and_spares_escalation():
     page = findings[:10]
     escalated_fid = page[1].finding_id
 
-    # Escalate one finding on the page first (a deliberate objection).
-    at.button(key=f"escalate__{escalated_fid}").click()
-    at.run()
+    # Escalate one finding on the page first (a deliberate objection), through the
+    # real Decision selectbox.
+    _decide(at, escalated_fid, "Escalate")
     assert len(at.session_state["decisions"]) == 1
 
     # Bulk approve all unreviewed on the page: 9 remaining awaiting findings.

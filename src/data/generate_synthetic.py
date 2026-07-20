@@ -465,7 +465,12 @@ def _assert_invariants(records: list[dict]) -> None:
                 )
 
 
-def generate(n: int = 120, seed: int = 42) -> list[dict]:
+#: Number of canonical malformed fixtures in `_malformed_records()`. `malformed` is
+#: clamped to 0..MAX_MALFORMED, and selects the FIRST N of them.
+MAX_MALFORMED = 7
+
+
+def generate(n: int = 120, seed: int = 42, malformed: int = 7) -> list[dict]:
     """Build the synthetic dataset.
 
     Args:
@@ -473,11 +478,19 @@ def generate(n: int = 120, seed: int = 42) -> list[dict]:
            are additional, so the returned list is longer than `n`.
         seed: seed for the local `random.Random` instance. The same seed always yields a
               byte-identical result.
+        malformed: how many of the canonical malformed fixtures to interleave, taken as
+              the FIRST N of `_malformed_records()` and clamped to 0..MAX_MALFORMED.
+              `malformed=0` yields a wholly clean dataset (zero Stage 1 rejections).
 
     Returns:
         A list of plain JSON-serialisable dicts: `n` valid AssetRecord-shaped records with
         the malformed records interleaved at deterministic positions (interleaved rather
         than appended so that Stage 1 is shown recovering mid-stream).
+
+    Determinism: the malformed fixtures are drawn in fixed order and inserted at positions
+    computed from `n` and the fixture count, never from `rng`, so varying `malformed` does
+    not perturb the valid records at all and `generate()` on the default arguments is
+    byte-identical to every previous run.
 
     Pure: writes nothing. `main()` is the only writer.
     """
@@ -496,10 +509,13 @@ def generate(n: int = 120, seed: int = 42) -> list[dict]:
 
     # Interleave the bad records at fixed, evenly spread positions. Positions are computed
     # from n rather than drawn from rng, so they do not perturb the valid records at all.
-    malformed = _malformed_records()
-    if malformed:
-        stride = max(1, len(records) // (len(malformed) + 1))
-        for offset, bad in enumerate(malformed):
+    # The stride divides by the CHOSEN fixture count, so fewer malformed records spread
+    # just as evenly across whatever n was asked for.
+    count = max(0, min(MAX_MALFORMED, int(malformed)))
+    bad_records = _malformed_records()[:count]
+    if bad_records:
+        stride = max(1, len(records) // (len(bad_records) + 1))
+        for offset, bad in enumerate(bad_records):
             position = min(len(records), stride * (offset + 1) + offset)
             records.insert(position, bad)
 
@@ -517,9 +533,13 @@ def write_dataset(records: list[dict], path: str | Path = DATA_PATH) -> str:
     return str(target)
 
 
-def main() -> None:
-    """Generate the dataset and write it to data/synthetic/assets.json."""
-    records = generate()
+def main(n: int = 120, seed: int = 42, malformed: int = 7) -> None:
+    """Generate the dataset and write it to data/synthetic/assets.json.
+
+    Arguments mirror :func:`generate`; the defaults reproduce the frozen dataset the
+    test suite pins by SHA-256.
+    """
+    records = generate(n=n, seed=seed, malformed=malformed)
     written = write_dataset(records)
 
     valid = sum(1 for r in records if str(r.get("asset_id", "")) < "AST-9000")

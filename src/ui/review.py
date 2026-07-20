@@ -8,6 +8,19 @@ so the trail can never disagree with the decision history.
 The decision list is append-only: revisiting a finding appends a new decision rather
 than overwriting the old one, and `gate.resolve_decisions` takes the latest. That is
 what makes "escalate, then resolve, then approve" auditable instead of invisible.
+
+MODIFY IS TWO-PHASE, APPROVE AND ESCALATE ARE NOT
+-------------------------------------------------
+Approve and Escalate are complete the instant they are selected — there is nothing
+left to compose — so they record immediately.
+
+Modify is not. Selecting "Modify" only opens the editor: it records NO decision, the
+finding stays AWAITING_REVIEW, and it does NOT count toward review coverage. Exactly
+one MODIFY decision is appended, carrying the real replacement prose, when the analyst
+presses Save. This is deliberate: recording a MODIFY on selection would let a report be
+compiled containing a finding labelled "Modified" whose explanation was never modified,
+which is a false statement in the submitted artefact. A finding with an open, uncommitted
+edit is shown as pending on its card and counted as outstanding in the gate banner.
 """
 from __future__ import annotations
 
@@ -22,9 +35,13 @@ from src.models import (
     DecisionType,
     Explanation,
     FindingStatus,
-    MappingType,
     Severity,
 )
+
+# Actor written to the trail when no analyst name has been entered. Deliberately not
+# the plausible-looking literal "analyst": an unattributed decision must READ as
+# unattributed in the exported CSV, not as a person called "analyst".
+UNNAMED_ANALYST = "(unnamed analyst)"
 
 # Decision -> the status the finding lands in once that decision is taken.
 _STATUS_FOR_DECISION = {
@@ -33,13 +50,6 @@ _STATUS_FOR_DECISION = {
     DecisionType.ESCALATE: FindingStatus.ESCALATED,
 }
 
-_SEVERITY_COLOUR = {
-    Severity.CRITICAL: "red",
-    Severity.HIGH: "orange",
-    Severity.MEDIUM: "blue",
-    Severity.LOW: "green",
-    Severity.NONE: "grey",
-}
 
 
 # ---------- state helpers ----------
@@ -61,7 +71,7 @@ def apply_decision(
     explanations_by_id: Optional[dict] = None,
     modified_explanation: Optional[str] = None,
     analyst_note: Optional[str] = None,
-    analyst_id: str = "analyst",
+    analyst_id: str = UNNAMED_ANALYST,
 ) -> AnalystDecision:
     """Record one analyst decision: append to history, update status, write the audit entry.
 
@@ -87,11 +97,17 @@ def apply_decision(
             explanation.plain_english = modified_explanation
 
     details = analyst_note
-    if decision_type == DecisionType.MODIFY and modified_explanation:
-        details = (
-            f"Explanation edited by analyst. {analyst_note}" if analyst_note
-            else "Explanation edited by analyst."
+    if decision_type == DecisionType.MODIFY:
+        # Only claim an edit when replacement prose was actually supplied. The UI only
+        # ever records a MODIFY from the Save button, so the first branch is the live
+        # path; the second stays as an honest fallback for any caller that records a
+        # MODIFY without prose, so the trail never asserts an edit that never happened.
+        base = (
+            "Explanation edited by analyst." if modified_explanation
+            else "Modify recorded with no replacement prose; "
+                 "generated explanation unchanged."
         )
+        details = f"{base} {analyst_note}" if analyst_note else base
     if previous_status == FindingStatus.ESCALATED and decision_type != DecisionType.ESCALATE:
         resolution = "Escalation resolved; finding released to Stage 5."
         details = f"{details} {resolution}" if details else resolution
@@ -107,11 +123,107 @@ def apply_decision(
     return decision
 
 
+# ---------- small formatting helpers ----------
+
+MAX_LISTED_IDS = 10
+
+
+def format_id_list(ids: list[str], limit: int = MAX_LISTED_IDS) -> str:
+    """`F-1, F-2, … and 240 more`.
+
+    With 300+ findings an un-truncated join produces a ~10,000-character banner that
+    is a screen of noise rather than information. The count is always exact.
+    """
+    ids = list(ids)
+    if len(ids) <= limit:
+        return ", ".join(ids)
+    return ", ".join(ids[:limit]) + f" …and {len(ids) - limit} more"
+
+
+#: session_state key holding the set of finding ids with an OPEN, uncommitted Modify.
+#:
+#: This deliberately does NOT live in the selectbox's own widget state. Streamlit
+#: discards the state of any widget that is not instantiated during a script run, and a
+#: bulk-approve click ends in st.rerun() before the cards are rendered — so the widget
+#: state of every card selectbox is dropped on that pass. A decided finding survives that
+#: because its selection is re-derived from its recorded decision; a PENDING modify has
+#: no decision by design, so it needs a home of its own or it would silently vanish.
+PENDING_MODIFY_KEY = "pending_modify"
+
+
+def _pending_store() -> set:
+    """The live pending-edit set from session_state, or an empty set with no session."""
+    try:
+        import streamlit as st
+
+        store = st.session_state.get(PENDING_MODIFY_KEY)
+        if not isinstance(store, set):
+            store = set()
+            st.session_state[PENDING_MODIFY_KEY] = store
+        return store
+    except Exception:  # noqa: BLE001 - headless caller (tests, scripts): no session.
+        return set()
+
+
+def _has_committed_modify(
+    finding_id: str, decisions: list[AnalystDecision]
+) -> bool:
+    """True when this finding's effective decision is a Modify carrying real prose."""
+    latest = resolve_decisions(decisions).get(finding_id)
+    return (
+        latest is not None
+        and latest.decision == DecisionType.MODIFY
+        and bool((latest.modified_explanation or "").strip())
+    )
+
+
+def mark_edit_pending(finding_id: str) -> None:
+    """Record that the analyst has an open, uncommitted edit on this finding."""
+    _pending_store().add(finding_id)
+
+
+def clear_edit_pending(finding_id: str) -> None:
+    """Drop the open-edit marker (the edit was saved, or the selection changed)."""
+    _pending_store().discard(finding_id)
+
+
+def edit_pending(finding_id: str, decisions: list[AnalystDecision]) -> bool:
+    """True when Modify is selected for this finding but no edit has been committed.
+
+    Two ways that can happen:
+
+    * The analyst has picked "Modify" in the card's selectbox and not yet pressed Save.
+      No decision has been recorded at all, so the finding is still AWAITING_REVIEW and
+      still outstanding for coverage — this function is what makes that visible.
+    * A MODIFY decision exists but carries no replacement prose (not reachable from this
+      UI any more, since only Save records a MODIFY; kept so such a decision arriving
+      from anywhere else still reads as pending rather than as a completed edit).
+    """
+    latest = resolve_decisions(decisions).get(finding_id)
+    if (
+        latest is not None
+        and latest.decision == DecisionType.MODIFY
+        and not (latest.modified_explanation or "").strip()
+    ):
+        return True
+    if _has_committed_modify(finding_id, decisions):
+        return False
+    return finding_id in _pending_store()
+
+
+def pending_edit_ids(
+    finding_ids: list[str], decisions: list[AnalystDecision]
+) -> list[str]:
+    """Findings with Modify selected but no committed edit, in finding order."""
+    return [fid for fid in finding_ids if edit_pending(fid, decisions)]
+
+
 # ---------- gate banner ----------
 
 def render_gate_banner(
     decisions: list[AnalystDecision],
     finding_ids: Optional[list[str]] = None,
+    pending_ids: Optional[list[str]] = None,
 ) -> bool:
     """Live Stage 5 gate banner. Returns the hard control's verdict (escalation clear).
 
@@ -121,6 +233,11 @@ def render_gate_banner(
 
     `finding_ids` is the live finding set: coverage is measured by set containment, so a
     stray/orphan decision cannot inflate it (see `gate_status`).
+
+    `pending_ids` are findings with "Modify" selected but no edit committed. They carry
+    no decision, so `gate_status` already counts them as outstanding; they are called out
+    separately because "you started an edit and never saved it" is a different instruction
+    to the analyst from "you never looked at this finding".
     """
     import streamlit as st
 
@@ -147,7 +264,7 @@ def render_gate_banner(
             "human objection).",
             icon="🚫",
         )
-        st.caption("Escalated: " + ", ".join(status["escalated_ids"]))
+        st.caption("Escalated: " + format_id_list(status["escalated_ids"]))
     elif not status["coverage_complete"]:
         st.warning(
             f"**{status['outstanding_count']} finding(s) awaiting a decision.** "
@@ -162,16 +279,20 @@ def render_gate_banner(
             icon="✅",
         )
 
+    if pending_ids:
+        # An uncommitted Modify is NOT a decision. Saying so here is what stops the
+        # analyst reading "outstanding" as "untouched" and re-deciding a finding they
+        # are halfway through editing.
+        st.caption(
+            f"✏️ {len(pending_ids)} finding(s) have **Modify selected but no edit "
+            "saved** — they carry no decision yet and still count as outstanding: "
+            + format_id_list(pending_ids)
+        )
+
     return can_generate_report(decisions)
 
 
 # ---------- finding card ----------
-
-def _badge(mapping_type: MappingType) -> str:
-    if mapping_type == MappingType.PRIMARY:
-        return ":blue-background[**Primary**]"
-    return ":grey-background[Secondary]"
-
 
 def _status_chip(status: FindingStatus) -> str:
     chips = {
@@ -184,189 +305,295 @@ def _status_chip(status: FindingStatus) -> str:
     return chips.get(status, str(status.value))
 
 
+SELECT_PLACEHOLDER = "— Select —"
+DECISION_OPTIONS = [SELECT_PLACEHOLDER, "Approve", "Modify", "Escalate"]
+
+_DECISION_FOR_LABEL = {
+    "Approve": DecisionType.APPROVE,
+    "Modify": DecisionType.MODIFY,
+    "Escalate": DecisionType.ESCALATE,
+}
+_LABEL_FOR_STATUS = {
+    FindingStatus.APPROVED: "Approve",
+    FindingStatus.MODIFIED: "Modify",
+    FindingStatus.ESCALATED: "Escalate",
+    FindingStatus.COMMITTED: "Approve",
+}
+
+
+def severity_label(finding: ComplianceFinding) -> str:
+    """Critical / High / Medium / Low for the chip in the accordion body.
+
+    Derived from the triggering CVSS where one exists (CVSS v3 qualitative bands).
+    Many findings carry no CVE/CVSS at all — a stale account or an absent MFA policy
+    is not a scored vulnerability — so those fall back to the asset's criticality
+    rather than inventing a score.
+    """
+    cvss = finding.triggering_cvss
+    if cvss is not None:
+        if cvss >= 9.0:
+            return "Critical"
+        if cvss >= 7.0:
+            return "High"
+        if cvss >= 4.0:
+            return "Medium"
+        return "Low"
+    return {
+        Severity.CRITICAL: "Critical",
+        Severity.HIGH: "High",
+        Severity.MEDIUM: "Medium",
+        Severity.LOW: "Low",
+    }.get(finding.asset.criticality, "None")
+
+
+_ABSENT_TOKENS = {"", "none", "nan", "null", "n/a"}
+
+
+def accordion_title(finding: ComplianceFinding, display_no: int) -> str:
+    """`FND-0001 • CVE-2023-20027 • CVSS 7.1 (High) • Asset AST-0021` for scored
+    vulnerabilities; `FND-0003 • MFA_ABSENT • Medium • Asset AST-0001` for the rest.
+
+    Most findings (a stale account, an absent MFA policy) have no CVE and no CVSS at
+    all, so leading them with "no CVE" spends the most scannable part of the row saying
+    what the finding is NOT. Those rows lead with the ISSUE CODE — the thing that
+    actually distinguishes them — while CVE-backed rows keep the CVE/CVSS format.
+
+    `display_no` is a presentation-only sequence number. `finding.finding_id` is the
+    audit key and a stability contract — it is shown in the body and used for every
+    widget key, and is never replaced by this label.
+    """
+    parts = [f"FND-{display_no:04d}"]
+    cve = (finding.triggering_cve or "").strip()
+    cvss = finding.triggering_cvss
+    severity = severity_label(finding)
+    if severity in _ABSENT_TOKENS or severity.lower() in _ABSENT_TOKENS:
+        severity = "Unrated"
+
+    if cve.lower() not in _ABSENT_TOKENS:
+        parts.append(cve)
+        if cvss is not None:
+            parts.append(f"CVSS {cvss:.1f} ({severity})")
+        else:
+            parts.append(f"{severity} severity")
+    else:
+        # No CVE: the issue code is the identifying fact for this row.
+        code = str(getattr(finding.issue_code, "value", finding.issue_code)).strip()
+        if code.lower() not in _ABSENT_TOKENS:
+            parts.append(code)
+        parts.append(severity)
+
+    parts.append(f"Asset {finding.asset.asset_id}")
+    return " • ".join(parts)
+
+
 def render_finding_card(
     finding: ComplianceFinding,
     explanation: Optional[Explanation],
     decisions: list[AnalystDecision],
     audit_log: AuditLog,
     explanations_by_id: dict,
-    analyst_id: str = "analyst",
+    analyst_id: str = UNNAMED_ANALYST,
+    display_no: int = 1,
 ) -> None:
-    """Render one finding as a reviewable card with Approve / Modify / Escalate."""
+    """Render one finding as a collapsed accordion with a Decision selectbox.
+
+    Widget keys are derived from `finding.finding_id`, which is unique and stable
+    across reruns — with 300+ accordions on screen a key collision would silently
+    reset another finding's decision widget.
+    """
     import streamlit as st
+    from src.ui.chrome import severity_chip
 
     fid = finding.finding_id
     status = status_of(fid, decisions)
     asset = finding.asset
 
-    with st.container(border=True):
-        header_left, header_right = st.columns([3, 1])
-        with header_left:
-            st.markdown(f"#### {fid} — {finding.issue_code.value}")
-            st.caption(f"Rule `{finding.rule_id}`")
-        with header_right:
+    with st.expander(accordion_title(finding, display_no), expanded=False):
+        body, panel = st.columns([3, 2])
+
+        with body:
+            st.markdown(
+                f"{severity_chip(severity_label(finding))} "
+                f"&nbsp;<span style='color:#718096;font-size:0.8rem;'>"
+                f"{fid} · {finding.issue_code.value} · rule {finding.rule_id}</span>",
+                unsafe_allow_html=True,
+            )
             st.markdown(_status_chip(status))
-
-        # --- asset facts ---
-        facts = st.columns(4)
-        facts[0].markdown(f"**Asset**\n\n{asset.hostname}")
-        facts[0].caption(f"{asset.asset_id} · {asset.ip_address}")
-        facts[1].markdown(f"**OS**\n\n{asset.operating_system}")
-        facts[1].caption(f"{asset.environment} · assessed {asset.assessment_date}")
-
-        cve = finding.triggering_cve or "—"
-        facts[2].markdown(f"**CVE**\n\n{cve}")
-        exposure = "Internet-facing" if asset.internet_facing else "Internal only"
-        facts[2].caption(exposure)
-
-        cvss = finding.triggering_cvss
-        colour = _SEVERITY_COLOUR.get(asset.criticality, "grey")
-        facts[3].markdown(
-            f"**CVSS**\n\n{cvss:.1f}" if cvss is not None else "**CVSS**\n\n—"
-        )
-        facts[3].caption(f":{colour}[Asset criticality: {asset.criticality.value}]")
-
-        # --- Stage 3 explanation ---
-        st.markdown("**Why this is a finding**")
-        if explanation is not None:
-            st.write(explanation.plain_english)
-        else:
-            st.info("No Stage 3 explanation available for this finding yet.")
-
-        # --- linked controls ---
-        mappings = (
-            explanation.linked_controls if explanation and explanation.linked_controls
-            else finding.control_mappings
-        )
-        if mappings:
-            st.markdown("**Linked controls**")
-            any_unverified = False
-            for mapping in mappings:
-                # Provenance: is THIS intersection sourced from George's Appendix Aii?
-                # The `verified` flag is stripped when a ControlMapping is built (models.py
-                # frozen), so it is read back from the mapping engine's index by identity.
-                verified = is_verified_mapping(
-                    finding.rule_id, mapping.framework, mapping.control_id
-                )
-                if verified is True:
-                    provenance = " &nbsp; :green-background[✓ sourced]"
-                elif verified is False:
-                    provenance = " &nbsp; :orange-background[⚠ unverified]"
-                    any_unverified = True
-                else:
-                    # None: cannot assert provenance — render no badge, only Primary/Secondary.
-                    provenance = ""
-                # A CE / CE+ pillar has no identifier distinct from its name (control_id
-                # == control_name), unlike ISO where the id is a code like "A.8.8". Print
-                # the label once in that case rather than stuttering "Patch Management
-                # Patch Management".
-                if mapping.control_id.strip() == mapping.control_name.strip():
-                    label = f"**{mapping.control_id}**"
-                else:
-                    label = f"**{mapping.control_id}** {mapping.control_name}"
-                st.markdown(
-                    f"- {_badge(mapping.mapping_type)} &nbsp; "
-                    f"`{mapping.framework.value}` — {label}{provenance}"
-                )
-            if any_unverified:
+            if edit_pending(fid, decisions):
                 st.caption(
-                    "⚠ Mappings marked *unverified* are best-effort and not yet sourced "
-                    "from George's Appendix Aii — confirm before citing them."
+                    "⚠ **Modify selected, nothing saved yet.** No decision has been "
+                    "recorded for this finding, so it still counts as outstanding at "
+                    "the Stage 5 gate, and the generated text below is still what the "
+                    "report would carry. Save the modified explanation in the Decision "
+                    "panel to commit it."
+                )
+            st.caption(
+                f"{asset.hostname} ({asset.asset_id}) · {asset.operating_system} · "
+                f"{asset.ip_address} · {asset.environment} · "
+                + ("Internet-facing" if asset.internet_facing else "Internal only")
+                + f" · assessed {asset.assessment_date}"
+            )
+
+            if explanation is not None:
+                st.write(explanation.plain_english)
+            else:
+                st.info("No Stage 3 explanation available for this finding yet.")
+
+            mappings = (
+                explanation.linked_controls
+                if explanation and explanation.linked_controls
+                else finding.control_mappings
+            )
+            if mappings:
+                st.markdown("**Control Mappings:**")
+                any_unverified = False
+                for mapping in mappings:
+                    # Provenance: is THIS intersection sourced from George's Appendix Aii?
+                    # The `verified` flag is stripped when a ControlMapping is built
+                    # (models.py frozen), so it is read back from the mapping engine's
+                    # index by identity.
+                    verified = is_verified_mapping(
+                        finding.rule_id, mapping.framework, mapping.control_id
+                    )
+                    if verified is True:
+                        provenance = " &nbsp; :green-background[✓ sourced]"
+                    elif verified is False:
+                        provenance = " &nbsp; :orange-background[⚠ unverified]"
+                        any_unverified = True
+                    else:
+                        # None: cannot assert provenance — render no badge.
+                        provenance = ""
+                    # A CE / CE+ pillar has no identifier distinct from its name
+                    # (control_id == control_name), unlike ISO where the id is a code
+                    # like "A.8.8". Print the label once rather than stuttering
+                    # "Patch Management Patch Management".
+                    if mapping.control_id.strip() == mapping.control_name.strip():
+                        label = f"**{mapping.control_id}**"
+                    else:
+                        label = f"**{mapping.control_id}** {mapping.control_name}"
+                    st.markdown(
+                        f"- `{mapping.framework.value}` → {label} "
+                        f"*({mapping.mapping_type.value.title()})*{provenance}"
+                    )
+                if any_unverified:
+                    st.caption(
+                        "⚠ Mappings marked *unverified* are best-effort and not yet "
+                        "sourced from George's Appendix Aii — confirm before citing them."
+                    )
+
+            steps = explanation.remediation_steps if explanation else []
+            if steps:
+                with st.expander("Remediation steps"):
+                    for i, step in enumerate(steps, start=1):
+                        st.markdown(f"{i}. {step}")
+
+            history = [d for d in decisions if d.finding_id == fid]
+            if history:
+                with st.expander(f"Decision history ({len(history)})"):
+                    for d in history:
+                        note_text = f" — {d.analyst_note}" if d.analyst_note else ""
+                        st.caption(
+                            f"{d.timestamp:%Y-%m-%d %H:%M:%S} UTC · "
+                            f"**{d.decision.value}** by {d.analyst_id}{note_text}"
+                        )
+                    st.caption("Latest decision is the effective one.")
+
+        with panel:
+            st.markdown("**Decision**")
+            # A pending Modify has no decision to re-derive the selection from, so the
+            # pending marker is what restores "Modify" if Streamlit dropped this
+            # widget's state (see PENDING_MODIFY_KEY).
+            default_label = _LABEL_FOR_STATUS.get(status, SELECT_PLACEHOLDER)
+            if edit_pending(fid, decisions):
+                default_label = "Modify"
+            default_index = DECISION_OPTIONS.index(default_label)
+            choice = st.selectbox(
+                "Decision",
+                options=DECISION_OPTIONS,
+                index=default_index,
+                key=f"decision__{fid}",
+                label_visibility="collapsed",
+            )
+            note = st.text_input(
+                "Notes (optional)",
+                key=f"note__{fid}",
+                placeholder="Rationale — recorded in the audit log",
+            )
+            if status == FindingStatus.ESCALATED:
+                st.caption(
+                    "Escalated — set this to Approve or Modify to resolve it and "
+                    "release Stage 5."
                 )
 
-        # --- remediation ---
-        steps = explanation.remediation_steps if explanation else []
-        if steps:
-            with st.expander("Remediation steps"):
-                for i, step in enumerate(steps, start=1):
-                    st.markdown(f"{i}. {step}")
+        # Approve and Escalate record the instant they are selected: there is nothing
+        # further for the analyst to compose, so the selection IS the decision.
+        # Recording happens only when the selection differs from the finding's CURRENT
+        # effective decision, so re-rendering an already-decided finding never appends
+        # a duplicate, and re-selecting a different option records the change.
+        #
+        # "Modify" is deliberately absent from this branch. Selecting it composes
+        # nothing and decides nothing — it opens the editor below. Recording a MODIFY
+        # here would mark the finding REVIEWED for coverage before any edit existed, and
+        # a report could then be compiled containing a finding labelled "Modified" whose
+        # explanation was never modified. Exactly one MODIFY is appended, carrying the
+        # real replacement prose, by the Save button below.
+        # Track the open edit. Marking is what makes a Modify-in-progress survive a
+        # rerun, show as pending on the card and in the gate banner, and be spared by
+        # bulk approve. Any other selection clears it.
+        if choice == "Modify" and not _has_committed_modify(fid, decisions):
+            mark_edit_pending(fid)
+        else:
+            clear_edit_pending(fid)
 
-        # --- decision history ---
-        history = [d for d in decisions if d.finding_id == fid]
-        if history:
-            with st.expander(f"Decision history ({len(history)})"):
-                for d in history:
-                    note = f" — {d.analyst_note}" if d.analyst_note else ""
-                    st.caption(
-                        f"{d.timestamp:%Y-%m-%d %H:%M:%S} UTC · **{d.decision.value}** "
-                        f"by {d.analyst_id}{note}"
-                    )
-                st.caption("Latest decision is the effective one.")
-
-        st.divider()
-
-        # --- actions ---
-        edit_key = f"edit_open__{fid}"
-        if edit_key not in st.session_state:
-            st.session_state[edit_key] = False
-
-        note = st.text_input(
-            "Analyst note (optional)",
-            key=f"note__{fid}",
-            placeholder="Rationale for this decision — recorded in the audit log",
-        )
-
-        action_cols = st.columns([1, 1, 1, 3])
-
-        if action_cols[0].button(
-            "✅ Approve", key=f"approve__{fid}", width="stretch"
-        ):
-            apply_decision(
-                fid, DecisionType.APPROVE, decisions, audit_log,
-                explanations_by_id, analyst_note=note, analyst_id=analyst_id,
-            )
-            st.session_state[edit_key] = False
-            st.rerun()
-
-        if action_cols[1].button(
-            "✏️ Modify", key=f"modify__{fid}", width="stretch"
-        ):
-            st.session_state[edit_key] = not st.session_state[edit_key]
-            st.rerun()
-
-        if action_cols[2].button(
-            "🚩 Escalate", key=f"escalate__{fid}", width="stretch"
-        ):
-            apply_decision(
-                fid, DecisionType.ESCALATE, decisions, audit_log,
-                explanations_by_id, analyst_note=note, analyst_id=analyst_id,
-            )
-            st.session_state[edit_key] = False
-            st.rerun()
-
-        if status == FindingStatus.ESCALATED:
-            action_cols[3].caption(
-                "Escalated — approve or modify this finding to resolve it and release "
-                "Stage 5."
-            )
-
-        # --- modify panel ---
-        if st.session_state[edit_key]:
-            current_text = explanation.plain_english if explanation else ""
-            edited = st.text_area(
-                "Edit the plain-English explanation",
-                value=current_text,
-                key=f"text__{fid}",
-                height=180,
-                help="The edited text replaces the generated explanation in the report.",
-            )
-            commit_col, cancel_col, _ = st.columns([1, 1, 3])
-            if commit_col.button(
-                "Commit modification", key=f"commit__{fid}", type="primary",
-                width="stretch",
-            ):
+        if choice not in (SELECT_PLACEHOLDER, "Modify"):
+            wanted = _DECISION_FOR_LABEL[choice]
+            current = _LABEL_FOR_STATUS.get(status)
+            if current != choice:
                 apply_decision(
-                    fid, DecisionType.MODIFY, decisions, audit_log,
-                    explanations_by_id, modified_explanation=edited,
+                    fid, wanted, decisions, audit_log, explanations_by_id,
+                    modified_explanation=None,
                     analyst_note=note, analyst_id=analyst_id,
                 )
-                st.session_state[edit_key] = False
                 st.rerun()
-            if cancel_col.button(
-                "Cancel", key=f"cancel__{fid}", width="stretch"
-            ):
-                st.session_state[edit_key] = False
-                st.rerun()
+
+        # Modify reveals the editable explanation. Save is the only thing that decides.
+        if choice == "Modify":
+            with st.container(border=True):
+                current_text = explanation.plain_english if explanation else ""
+                edited = st.text_area(
+                    "Edit the plain-English explanation",
+                    value=current_text,
+                    key=f"text__{fid}",
+                    height=160,
+                    help="The edited text replaces the generated explanation in the report.",
+                )
+                if edit_pending(fid, decisions):
+                    st.caption(
+                        "⚠ **No decision recorded yet.** Selecting Modify only opens "
+                        "this editor — the finding is still outstanding at the gate "
+                        "until you save. Save records one Modify decision carrying the "
+                        "text above, and one audit entry."
+                    )
+                if st.button(
+                    "Save modified explanation",
+                    key=f"commit__{fid}",
+                    type="primary",
+                ):
+                    if not (edited or "").strip():
+                        # An empty replacement is not an edit. Recording it would put a
+                        # "Modified" finding with no explanation into the report.
+                        st.warning(
+                            "Nothing saved — the modified explanation is empty. Enter "
+                            "the replacement text, or pick Approve/Escalate instead."
+                        )
+                    else:
+                        apply_decision(
+                            fid, DecisionType.MODIFY, decisions, audit_log,
+                            explanations_by_id, modified_explanation=edited,
+                            analyst_note=note, analyst_id=analyst_id,
+                        )
+                        clear_edit_pending(fid)
+                        st.rerun()
 
 
 # ---------- the stage ----------
@@ -376,7 +603,7 @@ def render_review_stage(
     explanations: list[Explanation],
     decisions: list[AnalystDecision],
     audit_log: AuditLog,
-    analyst_id: str = "analyst",
+    analyst_id: str = UNNAMED_ANALYST,
     page_size: int = 10,
 ) -> bool:
     """Render Stage 4 in full. Returns the gate verdict (`can_generate_report`).
@@ -384,8 +611,38 @@ def render_review_stage(
     Safe to call with empty lists on first load.
     """
     import streamlit as st
+    from src.ui.chrome import render_callout
 
-    st.subheader("Stage 4 — Human validation gate")
+    st.markdown("### Every finding below requires an individual analyst decision")
+    render_callout(
+        "<b>Non-bypassable HITL gate — two separate rules.</b><br>"
+        "<b>1. Coverage:</b> every finding listed here must carry an analyst decision "
+        "(Approve, Modify or Escalate) recorded against a named analyst before a "
+        "report can be compiled.<br>"
+        "<b>2. Objection:</b> an <b>open Escalate blocks the report outright</b>. "
+        "Escalating does <i>not</i> satisfy rule 1 for the purpose of generating a "
+        "report — no report may be produced over an unresolved human objection. The "
+        "escalation must be resolved by a later Approve or Modify first.<br>"
+        "Both rules are enforced in the code — in the compile path and again at the "
+        "PDF boundary — not just in this interface."
+    )
+
+    st.text_input(
+        "Reviewing analyst name",
+        key="analyst_id",
+        placeholder="e.g. J. Okafor — Security Analyst",
+        help="Recorded as the actor against every decision in the audit trail.",
+    )
+    # The callout above promises decisions are attributed to a NAMED analyst, so an
+    # unnamed session must say plainly what will actually be written to the trail
+    # rather than quietly recording a generic actor.
+    if not (st.session_state.get("analyst_id") or "").strip():
+        st.warning(
+            "**No analyst name entered.** Decisions taken now are recorded against "
+            f"`{UNNAMED_ANALYST}` in the audit trail, which is not an accountable "
+            "attribution. Enter your name above before deciding.",
+            icon="⚠️",
+        )
 
     if not findings:
         # The gate banner carries the empty-state message on its own; a second info box
@@ -395,8 +652,10 @@ def render_review_stage(
 
     explanations_by_id = {e.finding_id: e for e in (explanations or [])}
 
+    all_ids = [f.finding_id for f in findings]
+    pending_ids = pending_edit_ids(all_ids, decisions)
     gate_open = render_gate_banner(
-        decisions, finding_ids=[f.finding_id for f in findings]
+        decisions, finding_ids=all_ids, pending_ids=pending_ids
     )
 
     # --- filters ---
@@ -448,14 +707,22 @@ def render_review_stage(
     # entry via apply_decision — the per-finding accountability trail is never collapsed into
     # a single record. Only AWAITING_REVIEW findings are targeted, so a bulk approve can never
     # silently override a deliberate Escalate or Modify.
-    unreviewed_on_page = [
-        f for f in page_items
-        if status_of(f.finding_id, decisions) == FindingStatus.AWAITING_REVIEW
-    ]
-    unreviewed_in_scope = [
-        f for f in visible
-        if status_of(f.finding_id, decisions) == FindingStatus.AWAITING_REVIEW
-    ]
+    #
+    # Findings with an OPEN, uncommitted Modify are excluded too. They are technically
+    # AWAITING_REVIEW (selecting Modify records nothing), but the analyst has visibly
+    # started composing an edit on them; sweeping an Approve over that would discard a
+    # deliberate act just as surely as overriding a committed Modify would.
+    pending_set = set(pending_ids)
+
+    def _bulk_targets(candidates):
+        return [
+            f for f in candidates
+            if status_of(f.finding_id, decisions) == FindingStatus.AWAITING_REVIEW
+            and f.finding_id not in pending_set
+        ]
+
+    unreviewed_on_page = _bulk_targets(page_items)
+    unreviewed_in_scope = _bulk_targets(visible)
     scope_label = "the current filter" if status_filter else "all findings"
 
     bulk_page_col, bulk_scope_col = st.columns(2)
@@ -491,6 +758,10 @@ def render_review_stage(
             )
         st.rerun()
 
+    # Display numbers are assigned over the FULL finding list, so FND-0007 stays
+    # FND-0007 whatever filter or page it is viewed through.
+    display_numbers = {f.finding_id: i for i, f in enumerate(findings, start=1)}
+
     for finding in page_items:
         render_finding_card(
             finding=finding,
@@ -499,6 +770,7 @@ def render_review_stage(
             audit_log=audit_log,
             explanations_by_id=explanations_by_id,
             analyst_id=analyst_id,
+            display_no=display_numbers.get(finding.finding_id, 1),
         )
 
     return gate_open

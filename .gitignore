@@ -26,3 +26,8 @@ Thumbs.db
 out/
 *.pdf
 !docs/**/*.pdf
+
+# Owner-supplied design references (screenshots of the CompliancePilot prototype).
+# Deliberately NOT committed: they contain personal file paths and a document
+# filename carrying the student ID, and this repo may be made public.
+WhatsApp*/

@@ -1,5 +1,5 @@
 """
-streamlit_app.py  -  Explainable Compliance Tool (Cyber Essentials x ISO/IEC 27001:2022).
+streamlit_app.py  -  CompliancePilot (Cyber Essentials / CE+ x ISO/IEC 27001:2022).
 
 Entry point for Streamlit Community Cloud. Drives the five-stage pipeline:
 
@@ -7,7 +7,11 @@ Entry point for Streamlit Community Cloud. Drives the five-stage pipeline:
     Stage 2  Mapping         issue codes -> cross-framework controls
     Stage 3  Explainability  plain-English rationale per finding
     Stage 4  HITL gate       analyst must Approve / Modify / Escalate every finding
-    Stage 5  Report          ReportLab PDF + SHA-256, BLOCKED while anything is escalated
+    Stage 5  Report          ReportLab PDF + SHA-256 seal, BLOCKED while anything is escalated
+
+Stages 1-3 are mechanical and run from one sidebar button. Stage 4 cannot be skipped or
+batched away from the analyst, and Stage 5 re-checks the Article 22 gate on the compile
+path itself — a disabled button is an affordance, not a control.
 
 All cross-rerun state lives in st.session_state (Streamlit re-executes this whole script
 on every interaction). No browser storage, no network calls.
@@ -29,7 +33,8 @@ from typing import Optional
 import streamlit as st
 
 from src.audit.log import AuditLog
-from src.data.generate_synthetic import main as generate_dataset
+from src.data.generate_synthetic import generate as generate_records
+from src.data.generate_synthetic import write_dataset
 from src.explain.explainer import explain
 from src.gate import can_generate_report, escalated_finding_ids, gate_status
 from src.ingestion.loader import describe_rejection, load_and_validate
@@ -43,24 +48,59 @@ from src.models import (
     FindingStatus,
     IngestionResult,
 )
-from src.report.integrity import sha256_of_file
-from src.report.pdf_builder import compile_pdf
+from src.report.integrity import content_digest, verify_seal
+from src.report.pdf_builder import build_and_hash
+from src.ui.chrome import (
+    current_step,
+    render_header,
+    render_seal_panel,
+    render_stepper,
+)
 from src.ui.heatmap import render_heatmap
 from src.ui.metrics import render_metrics
-from src.ui.review import render_review_stage
+from src.ui.review import (
+    PENDING_MODIFY_KEY,
+    UNNAMED_ANALYST,
+    format_id_list,
+    render_review_stage,
+)
 
 DATA_PATH = "data/synthetic/assets.json"
 RULES_DIR = "rules"
+SEED = 42
+
+#: Slider defaults. These are exactly the arguments that produced the COMMITTED
+#: data/synthetic/assets.json, so at these values Stage 1 reads that file rather than
+#: regenerating anything (see `_dataset_for`).
+DEFAULT_N_RECORDS = 120
+DEFAULT_N_MALFORMED = 7
 
 
-def _ensure_dataset() -> None:
-    """Materialise Agent 1's synthetic dataset if it is not on disk yet.
+def _dataset_for(n: int, malformed: int) -> str:
+    """Path to the dataset for the requested shape. NEVER writes into the repo.
 
-    Runs the real generator. If it fails, the exception propagates to Stage 1's
-    handler and is surfaced to the analyst: a dataset that cannot be built is a
-    condition to report, not to paper over.
+    `data/synthetic/assets.json` is a git-tracked artefact: it is the canonical demo
+    dataset, it is pinned by SHA-256 in the test suite, and `python -m
+    src.data.generate_synthetic` is its only writer. The running app must therefore
+    READ it and never overwrite it — otherwise moving a slider silently rewrites a
+    committed file, dirties the working tree and breaks the pinned determinism hash.
+
+    At the slider defaults the committed file already IS the requested dataset, so it is
+    loaded as-is. At any other slider setting the dataset is generated to a file under
+    the OS temp directory and loaded from there. Generation is seeded, so the temp file
+    for a given (n, malformed) is byte-identical every time; it is written to a unique
+    name and atomically renamed so two sessions cannot read a half-written file.
     """
-    generate_dataset()
+    if n == DEFAULT_N_RECORDS and malformed == DEFAULT_N_MALFORMED:
+        return DATA_PATH
+
+    target = os.path.join(
+        tempfile.gettempdir(), f"compliancepilot-assets-{SEED}-{n}-{malformed}.json"
+    )
+    scratch = f"{target}.{uuid.uuid4().hex}.tmp"
+    write_dataset(generate_records(n=n, seed=SEED, malformed=malformed), scratch)
+    os.replace(scratch, target)
+    return target
 
 
 # ======================================================================================
@@ -76,13 +116,26 @@ def init_state() -> None:
         "findings": [],
         "explanations": [],
         "decisions": [],
+        # Findings with "Modify" selected but no edit saved yet. They carry NO decision
+        # and do not count as reviewed — see src/ui/review.PENDING_MODIFY_KEY.
+        PENDING_MODIFY_KEY: set(),
         "stage_times": {},
         "baseline": None,
         "report": None,
         "report_bytes": None,
         "report_hash": None,
         "report_path": None,
-        "analyst_id": "analyst",
+        "sealed_digest": None,
+        "sealed_organisation": None,
+        "seal_check": None,
+        "organisation": "",
+        "n_records": DEFAULT_N_RECORDS,
+        "n_malformed": DEFAULT_N_MALFORMED,
+        # Deliberately EMPTY, not the literal "analyst": the Stage 4 callout promises
+        # decisions are attributed to a named analyst, so the field starts blank with a
+        # placeholder and Stage 4 warns until it is filled in. Anything recorded before
+        # then is attributed to UNNAMED_ANALYST, which reads as unattributed in the CSV.
+        "analyst_id": "",
         "last_error": None,
     }
     for key, value in defaults.items():
@@ -97,7 +150,7 @@ def _audit() -> AuditLog:
 
 
 def _analyst() -> str:
-    return st.session_state.get("analyst_id") or "analyst"
+    return (st.session_state.get("analyst_id") or "").strip() or UNNAMED_ANALYST
 
 
 def _reset_downstream(from_stage: int) -> None:
@@ -126,10 +179,19 @@ def _reset_downstream(from_stage: int) -> None:
                 ),
             )
         st.session_state["decisions"] = []
+        # Uncommitted edits belong to findings that no longer exist.
+        st.session_state[PENDING_MODIFY_KEY] = set()
+        # Decision widgets are keyed per finding and would otherwise survive the rebuild,
+        # showing an "Approve" selection for a decision that no longer exists.
+        for key in [k for k in st.session_state if k.startswith("decision__")]:
+            st.session_state[key] = "— Select —"
     st.session_state["report"] = None
     st.session_state["report_bytes"] = None
     st.session_state["report_hash"] = None
     st.session_state["report_path"] = None
+    st.session_state["sealed_digest"] = None
+    st.session_state["sealed_organisation"] = None
+    st.session_state["seal_check"] = None
 
 
 # ======================================================================================
@@ -138,13 +200,18 @@ def _reset_downstream(from_stage: int) -> None:
 
 def run_stage_1() -> None:
     started = time.perf_counter()
+    n = int(st.session_state.get("n_records") or DEFAULT_N_RECORDS)
+    malformed = int(st.session_state.get("n_malformed") or 0)
+    path = DATA_PATH
     try:
-        if not os.path.exists(DATA_PATH):
-            _ensure_dataset()
-        result = load_and_validate(DATA_PATH)
+        # The dataset shape is analyst-chosen (record count + deliberately malformed
+        # count). At the defaults that is the committed dataset, read as-is; anything
+        # else is generated into a temp file. The app never writes into the repo.
+        path = _dataset_for(n, malformed)
+        result = load_and_validate(path)
     except FileNotFoundError:
         st.session_state["last_error"] = (
-            f"Dataset not found at `{DATA_PATH}`. Generate it first:\n\n"
+            f"Dataset not found at `{path}`. Generate it first:\n\n"
             "```\n./.venv/Scripts/python.exe -m src.data.generate_synthetic\n```"
         )
         return
@@ -162,7 +229,8 @@ def run_stage_1() -> None:
         actor=_analyst(),
         details=(
             f"Loaded {len(result.valid_records)} valid record(s), "
-            f"{len(result.rejected)} rejected, from {DATA_PATH} in {elapsed:.3f}s."
+            f"{len(result.rejected)} rejected, from {path} in {elapsed:.3f}s "
+            f"(requested n={n}, malformed={malformed}, seed={SEED})."
         ),
     )
 
@@ -224,6 +292,23 @@ def run_stage_3() -> None:
     )
 
 
+def run_stages_1_3() -> None:
+    """Run ingestion, mapping and explainability in one click.
+
+    Stages 1-3 are deterministic machine work with no decision in them, so chaining
+    them costs nothing in accountability: each still records its own audit entry and
+    each still aborts the chain on failure. Stage 4 is deliberately NOT part of this —
+    the human gate is the one thing that cannot be automated away.
+    """
+    run_stage_1()
+    if st.session_state.get("last_error"):
+        return
+    run_stage_2()
+    if st.session_state.get("last_error"):
+        return
+    run_stage_3()
+
+
 def compile_report() -> Optional[ComplianceReport]:
     """Stage 5. Re-checks the Article 22 gate on the compile path itself.
 
@@ -282,11 +367,12 @@ def compile_report() -> Optional[ComplianceReport]:
         decisions=decisions,
     )
 
+    organisation = (st.session_state.get("organisation") or "").strip() or None
     out_path = os.path.join(tempfile.gettempdir(), f"{report_id}.pdf")
     try:
-        pdf_path = compile_pdf(report, out_path)
-        digest = sha256_of_file(pdf_path)
-        with open(pdf_path, "rb") as handle:
+        artefact_digest = build_and_hash(report, out_path, organisation=organisation)
+        sealed = content_digest(report, organisation=organisation)
+        with open(out_path, "rb") as handle:
             pdf_bytes = handle.read()
     except Exception as exc:  # noqa: BLE001
         st.session_state["last_error"] = f"Stage 5 failed: {exc}"
@@ -296,8 +382,6 @@ def compile_report() -> Optional[ComplianceReport]:
         return None
 
     elapsed = time.perf_counter() - started
-    report.sha256_hash = digest
-    report.pdf_path = pdf_path
 
     # Findings that made it into the report are now committed.
     for explanation in explanations:
@@ -305,8 +389,14 @@ def compile_report() -> Optional[ComplianceReport]:
 
     st.session_state["report"] = report
     st.session_state["report_bytes"] = pdf_bytes
-    st.session_state["report_hash"] = digest
-    st.session_state["report_path"] = pdf_path
+    st.session_state["report_hash"] = artefact_digest
+    st.session_state["report_path"] = out_path
+    st.session_state["sealed_digest"] = sealed
+    # The organisation name AT THE MOMENT OF SEALING. Verification compares the seal
+    # against the CURRENT name, so keeping the sealed one is what makes a later edit
+    # detectable rather than silently re-sealed.
+    st.session_state["sealed_organisation"] = organisation
+    st.session_state["seal_check"] = None
     st.session_state["stage_times"]["Stage 5 — Report"] = elapsed
     st.session_state["last_error"] = None
 
@@ -314,8 +404,9 @@ def compile_report() -> Optional[ComplianceReport]:
         action="STAGE_5_REPORT",
         actor=_analyst(),
         details=(
-            f"Compiled {report_id} with {len(findings)} finding(s) in {elapsed:.3f}s. "
-            f"SHA-256 {digest}."
+            f"Compiled {report_id} with {len(findings)} finding(s) in {elapsed:.3f}s "
+            f"for organisation {organisation or '(unnamed)'}. "
+            f"Content seal {sealed}. PDF SHA-256 {artefact_digest}."
         ),
     )
     return report
@@ -340,89 +431,86 @@ def _normalise_baseline(payload) -> Optional[dict]:
 
 
 # ======================================================================================
-# Sidebar
+# Sidebar — Pipeline Control
 # ======================================================================================
 
 def render_sidebar() -> None:
     import json
 
     with st.sidebar:
-        st.title("Compliance pipeline")
-        st.caption("Cyber Essentials × ISO/IEC 27001:2022")
+        st.title("Pipeline Control")
+        st.caption("Stages 1-3 run here. Stage 4 (below) cannot be skipped.")
 
-        st.text_input(
-            "Analyst ID",
-            key="analyst_id",
-            help="Recorded against every decision in the audit trail.",
+        st.slider(
+            "Synthetic findings to generate",
+            min_value=20,
+            max_value=200,
+            step=10,
+            key="n_records",
+            help="Number of valid synthetic asset records the generator produces.",
         )
+        st.slider(
+            "Deliberately malformed records",
+            min_value=0,
+            max_value=7,
+            step=1,
+            key="n_malformed",
+            help="Invalid records injected so Stage 1's rejection behaviour is visible.",
+        )
+        if (
+            st.session_state["n_records"] == DEFAULT_N_RECORDS
+            and st.session_state["n_malformed"] == DEFAULT_N_MALFORMED
+        ):
+            st.caption(
+                f"Reading the committed dataset `{DATA_PATH}` unchanged "
+                f"({DEFAULT_N_RECORDS} valid + {DEFAULT_N_MALFORMED} malformed)."
+            )
+        else:
+            st.caption(
+                "Non-default volumes are generated into a temporary file — the "
+                f"committed `{DATA_PATH}` is never overwritten by the app."
+            )
 
-        st.divider()
-
-        # ---- Stage 1 ----
-        st.markdown("**Stage 1 — Ingestion**")
-        if st.button("Load synthetic data", width="stretch", type="primary"):
-            run_stage_1()
+        if st.button(
+            "Run Stages 1-3 (Ingest → Map → Explain)",
+            width="stretch",
+            type="primary",
+            key="run_pipeline",
+        ):
+            run_stages_1_3()
             st.rerun()
 
         result: Optional[IngestionResult] = st.session_state.get("ingestion_result")
         if result is not None:
-            col_a, col_b = st.columns(2)
-            col_a.metric("Valid", len(result.valid_records))
-            col_b.metric("Rejected", len(result.rejected))
-            if result.rejected:
-                with st.expander(f"Rejected records ({len(result.rejected)})"):
-                    st.caption(
-                        "These records are **deliberately malformed** seed data. Stage 1 "
-                        "rejects anything that fails validation instead of guessing at "
-                        "it, and carries on with the rest — that refusal is the "
-                        "behaviour being demonstrated, not a failure."
-                    )
-                    for i, rejection in enumerate(result.rejected, start=1):
-                        summary = describe_rejection(rejection)
-                        st.markdown(
-                            f"**{i}. {summary.asset_id}** — {summary.headline}"
-                        )
-                        if summary.field:
-                            st.caption(f"field: `{summary.field}`")
-                        # The unedited validator output stays one click away: the audit
-                        # story depends on the full reason remaining available.
-                        with st.expander("Raw validator output"):
-                            st.code(summary.raw_reason, language="text")
-                            st.json(rejection.raw, expanded=False)
-            else:
-                st.caption("No records rejected.")
+            st.success(
+                f"Accepted {len(result.valid_records)} / "
+                f"Rejected {len(result.rejected)}"
+            )
 
         st.divider()
 
-        # ---- Stage 2 ----
-        st.markdown("**Stage 2 — Mapping**")
-        if st.button(
-            "Run mapping engine",
-            width="stretch",
-            disabled=result is None,
-        ):
-            run_stage_2()
-            st.rerun()
         findings = st.session_state.get("findings") or []
-        if findings:
-            st.caption(f"{len(findings)} finding(s) mapped.")
+        decisions = st.session_state["decisions"]
+        status = gate_status(
+            decisions,
+            finding_ids=[f.finding_id for f in findings] if findings else None,
+        )
+        st.metric("Findings awaiting review", status["outstanding_count"] if findings else 0)
+        st.metric("Rejected at Stage 1", len(result.rejected) if result else 0)
+        st.metric(
+            "Reviewed at Stage 4",
+            f"{status['reviewed_count'] if findings else 0} / {len(findings)}",
+        )
 
         st.divider()
 
-        # ---- Stage 3 ----
-        st.markdown("**Stage 3 — Explainability**")
-        if st.button(
-            "Generate explanations",
-            width="stretch",
-            disabled=not findings,
-        ):
-            run_stage_3()
-            st.rerun()
-        explanations = st.session_state.get("explanations") or []
-        if explanations:
-            st.caption(f"{len(explanations)} explanation(s) generated.")
-
-        st.divider()
+        if (st.session_state.get("analyst_id") or "").strip():
+            st.caption(f"Analyst on record: **{_analyst()}** (set in the Stage 4 tab).")
+        else:
+            st.caption(
+                f"Analyst on record: **{UNNAMED_ANALYST}** — enter your name in the "
+                "Stage 4 tab so decisions are accountably attributed."
+            )
 
         with st.expander("Evaluation baseline (optional)"):
             st.caption(
@@ -443,11 +531,56 @@ def render_sidebar() -> None:
 
 
 # ======================================================================================
+# Stage 1 rejections tab
+# ======================================================================================
+
+def render_rejections_tab() -> None:
+    st.markdown("### Stage 1 — rejected records")
+    result: Optional[IngestionResult] = st.session_state.get("ingestion_result")
+
+    if result is None:
+        st.info("Run Stages 1-3 from the sidebar to populate this panel.")
+        return
+
+    cols = st.columns(2)
+    cols[0].metric("Accepted", len(result.valid_records))
+    cols[1].metric("Rejected", len(result.rejected))
+
+    if not result.rejected:
+        st.success("No records rejected.")
+        return
+
+    st.caption(
+        "These records are **deliberately malformed** seed data. Stage 1 rejects "
+        "anything that fails validation instead of guessing at it, and carries on with "
+        "the rest — that refusal is the behaviour being demonstrated, not a failure."
+    )
+    for i, rejection in enumerate(result.rejected, start=1):
+        summary = describe_rejection(rejection)
+        with st.container(border=True):
+            st.markdown(f"**{i}. {summary.asset_id}** — {summary.headline}")
+            if summary.field:
+                st.caption(f"field: `{summary.field}`")
+            # The unedited validator output stays one click away: the audit story
+            # depends on the full reason remaining available.
+            with st.expander("Raw validator output"):
+                st.code(summary.raw_reason, language="text")
+                st.json(rejection.raw, expanded=False)
+
+
+# ======================================================================================
 # Stage 5 panel
 # ======================================================================================
 
-def render_report_stage(gate_open: bool) -> None:
-    st.subheader("Stage 5 — Report compilation")
+def render_report_stage() -> None:
+    """Stage 5 panel.
+
+    Takes no gate argument on purpose: the verdict is recomputed here from the live
+    decision list via `gate_status`, so this panel cannot be handed a stale or
+    hand-made "gate is open" from a caller. `compile_report` re-checks it a third
+    time on the compile path itself.
+    """
+    st.markdown("### Stage 5 — Sealed report")
 
     findings = st.session_state.get("findings") or []
     decisions = st.session_state["decisions"]
@@ -457,71 +590,151 @@ def render_report_stage(gate_open: bool) -> None:
     )
     ready = bool(findings) and status["unlocked"]
 
-    if not gate_open:
-        st.caption(
-            "Compilation is blocked while any finding is escalated. This is the UK GDPR "
-            "Article 22 design control: the tool supports the analyst's decision, it "
-            "does not overrule it."
+    if not findings:
+        st.warning(
+            "**Blocked — nothing to report.** Run Stages 1-3 from the sidebar, then "
+            "review every finding in the Stage 4 tab.",
+            icon="⏳",
+        )
+    elif not status["escalation_clear"]:
+        st.warning(
+            f"**Blocked — {status['escalated_count']} finding(s) still escalated:** "
+            + format_id_list(status["escalated_ids"])
+            + ". No report may be produced over an open human objection "
+            "(UK GDPR Article 22).",
+            icon="🚫",
+        )
+    elif not status["coverage_complete"]:
+        st.warning(
+            f"**Blocked — {status['outstanding_count']} finding(s) still awaiting an "
+            "analyst decision.** Every finding needs an Approve, Modify or Escalate "
+            "before the report can be sealed.",
+            icon="⏳",
+        )
+    else:
+        st.success(
+            f"**Unlocked — {status['reviewed_count']} finding(s) reviewed, none "
+            "escalated.** The report may be generated and sealed.",
+            icon="✅",
         )
 
-    col_button, col_info = st.columns([1, 3])
-    with col_button:
-        clicked = st.button(
-            "📄 Compile report",
-            type="primary",
-            disabled=not ready,
-            width="stretch",
-        )
-    with col_info:
-        if not findings:
-            st.caption("Run Stages 1–3 to populate the review queue.")
-        elif not status["escalation_clear"]:
-            st.caption(f"Blocked — {status['escalated_count']} escalation(s) open.")
-        elif not status["coverage_complete"]:
-            st.caption(f"{status['outstanding_count']} finding(s) awaiting a decision.")
-        else:
-            st.caption("Gate green — all findings resolved, none escalated.")
+    st.text_input(
+        "Organisation name for report header",
+        key="organisation",
+        placeholder="e.g. Northwind Manufacturing Ltd",
+    )
 
-    if clicked:
+    if st.button(
+        "Generate Sealed PDF Report",
+        type="primary",
+        disabled=not ready,
+        key="generate_report",
+    ):
         # The compile path re-checks the gate itself; the disabled button above is a
         # convenience, not the control. Rerun either way so the outcome (report or
         # refusal) renders immediately.
-        compile_report()
+        with st.spinner("Building and sealing the PDF report…"):
+            compile_report()
         st.rerun()
 
     report: Optional[ComplianceReport] = st.session_state.get("report")
-    if report is not None:
-        st.success(f"Report **{report.report_id}** compiled.", icon="📄")
-        st.markdown("**SHA-256 integrity hash**")
-        st.code(report.sha256_hash or "", language="text")
-        meta = st.columns(3)
-        meta[0].metric("Findings", len(report.findings))
-        meta[1].metric("Decisions", len(report.decisions))
-        meta[2].metric(
-            "Generated", f"{report.generated_at:%H:%M:%S}", help="UTC"
+    if report is None:
+        return
+
+    if not status["escalation_clear"]:
+        # A report sealed BEFORE this escalation was raised is still an honest artefact
+        # (it deep-copies the decisions it was built from, so it cannot be retro-fitted),
+        # but showing it and a live Download button underneath a red "no report may be
+        # produced" banner makes the screen contradict itself. It is withheld, not
+        # discarded: session state keeps it and it returns unchanged once the escalation
+        # is resolved.
+        st.info(
+            "A previously sealed report exists but is **withheld while an escalation "
+            "is open**. Resolve the escalation(s) in Stage 4 and the same sealed "
+            "report and its download reappear unchanged.",
+            icon="🔒",
         )
+        return
 
-        pdf_bytes = st.session_state.get("report_bytes")
-        if pdf_bytes:
-            st.download_button(
-                "⬇️ Download PDF",
-                data=pdf_bytes,
-                file_name=f"{report.report_id}.pdf",
-                mime="application/pdf",
-            )
-            st.caption(
-                "Re-hash the downloaded file to verify integrity. "
-                f"Windows: `certutil -hashfile {report.report_id}.pdf SHA256` · "
-                f"Linux/macOS: `sha256sum {report.report_id}.pdf`"
-            )
+    st.success(f"Report **{report.report_id}** compiled.", icon="📄")
+    render_seal_panel(
+        st.session_state.get("sealed_digest") or "",
+        artefact_digest=st.session_state.get("report_hash"),
+    )
 
-        audit_csv = _audit().to_csv()
+    verify_col, result_col = st.columns([1, 3])
+    if verify_col.button("Verify Integrity", key="verify_seal"):
+        sealed = st.session_state.get("sealed_digest") or ""
+        current_org = (st.session_state.get("organisation") or "").strip() or None
+        try:
+            intact = verify_seal(report, sealed, organisation=current_org)
+        except Exception as exc:  # noqa: BLE001
+            st.session_state["seal_check"] = ("error", str(exc))
+        else:
+            st.session_state["seal_check"] = (
+                ("intact", content_digest(report, organisation=current_org))
+                if intact
+                else ("broken", content_digest(report, organisation=current_org))
+            )
+        _audit().record_stage(
+            action="SEAL_VERIFIED",
+            actor=_analyst(),
+            details=(
+                f"Integrity check for {report.report_id}: "
+                f"{st.session_state['seal_check'][0]} "
+                f"(organisation at check: {current_org or '(unnamed)'})."
+            ),
+        )
+        st.rerun()
+
+    check = st.session_state.get("seal_check")
+    if check:
+        outcome, detail = check
+        if outcome == "intact":
+            result_col.success(
+                "**Seal intact** — the recomputed digest matches the sealed value.",
+                icon="✅",
+            )
+        elif outcome == "broken":
+            result_col.error(
+                "**SEAL BROKEN — content has changed since sealing.** "
+                f"Recomputed digest `{detail}` does not match the sealed value.",
+                icon="🚨",
+            )
+        else:
+            result_col.error(f"Verification failed: {detail}")
+
+    st.caption(
+        "Try editing the organisation name above, then click Verify Integrity — the "
+        "recomputed hash will no longer match the sealed value, demonstrating tamper "
+        "detection."
+    )
+
+    meta = st.columns(3)
+    meta[0].metric("Findings", len(report.findings))
+    meta[1].metric("Decisions", len(report.decisions))
+    meta[2].metric("Generated", f"{report.generated_at:%H:%M:%S}", help="UTC")
+
+    pdf_bytes = st.session_state.get("report_bytes")
+    if pdf_bytes:
         st.download_button(
-            "⬇️ Download audit trail (CSV)",
-            data=audit_csv,
-            file_name=f"{report.report_id}-audit.csv",
-            mime="text/csv",
+            "⬇️ Download PDF",
+            data=pdf_bytes,
+            file_name=f"{report.report_id}.pdf",
+            mime="application/pdf",
         )
+        st.caption(
+            "Re-hash the downloaded file to verify the artefact. "
+            f"Windows: `certutil -hashfile {report.report_id}.pdf SHA256` · "
+            f"Linux/macOS: `sha256sum {report.report_id}.pdf`"
+        )
+
+    st.download_button(
+        "⬇️ Download audit trail (CSV)",
+        data=_audit().to_csv(),
+        file_name=f"{report.report_id}-audit.csv",
+        mime="text/csv",
+    )
 
 
 # ======================================================================================
@@ -529,7 +742,7 @@ def render_report_stage(gate_open: bool) -> None:
 # ======================================================================================
 
 def render_audit_tab() -> None:
-    st.subheader("Audit trail")
+    st.markdown("### Audit trail")
     st.caption(
         "Append-only record of every stage transition and analyst decision "
         "(Data Protection Act 2018 accountability). Superseded decisions are retained."
@@ -573,18 +786,33 @@ def render_audit_tab() -> None:
 
 def main() -> None:
     st.set_page_config(
-        page_title="Explainable Compliance Tool",
+        page_title="CompliancePilot",
         page_icon="🛡️",
         layout="wide",
         initial_sidebar_state="expanded",
     )
     init_state()
 
-    st.title("🛡️ Explainable Compliance Tool")
-    st.caption(
-        "Rule-based mapping of security findings to Cyber Essentials, CE Plus and "
-        "ISO/IEC 27001:2022 — with a mandatory human validation gate before any report "
-        "is produced."
+    render_header()
+
+    findings = st.session_state.get("findings") or []
+    explanations = st.session_state.get("explanations") or []
+    decisions = st.session_state["decisions"]
+    stepper_status = gate_status(
+        decisions,
+        finding_ids=[f.finding_id for f in findings] if findings else None,
+    )
+    render_stepper(
+        current_step(
+            has_data=st.session_state.get("ingestion_result") is not None,
+            has_findings=bool(findings),
+            has_explanations=bool(explanations),
+            # `unlocked` is the gate's own verdict (escalations clear AND every finding
+            # decided), so the stepper can never advance past Approve while the gate is
+            # red. Presentation only — nothing here is a control.
+            review_complete=bool(findings) and stepper_status["unlocked"],
+            has_report=st.session_state.get("report") is not None,
+        )
     )
 
     render_sidebar()
@@ -598,18 +826,29 @@ def main() -> None:
         st.error(error)
         st.session_state["last_error"] = None
 
-    review_tab, report_tab, heatmap_tab, metrics_tab, audit_tab = st.tabs(
+    (
+        review_tab,
+        rejections_tab,
+        report_tab,
+        heatmap_tab,
+        metrics_tab,
+        audit_tab,
+    ) = st.tabs(
         [
-            "① Review (Stage 4)",
-            "② Report (Stage 5)",
-            "③ Mapping matrix",
-            "④ Evaluation metrics",
-            "⑤ Audit trail",
+            "Stage 4: Analyst Review Gate",
+            "Stage 1 Rejections",
+            "Stage 5: Report",
+            "Mapping matrix",
+            "Evaluation metrics",
+            "Audit trail",
         ]
     )
 
     with review_tab:
-        gate_open = render_review_stage(
+        # The returned verdict is intentionally not carried across to Stage 5: that
+        # panel recomputes the gate from the live decision list itself, so there is no
+        # wire along which a stale "open" could travel between tabs.
+        render_review_stage(
             findings=st.session_state.get("findings") or [],
             explanations=st.session_state.get("explanations") or [],
             # MUST be the live list object under "decisions" (guaranteed by init_state):
@@ -620,8 +859,11 @@ def main() -> None:
             analyst_id=_analyst(),
         )
 
+    with rejections_tab:
+        render_rejections_tab()
+
     with report_tab:
-        render_report_stage(gate_open=gate_open)
+        render_report_stage()
 
     with heatmap_tab:
         render_heatmap(st.session_state.get("matrix"))

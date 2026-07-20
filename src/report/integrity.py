@@ -36,6 +36,7 @@ Conversely, changing any committed field changes both digests.
 from __future__ import annotations
 
 import hashlib
+import hmac
 import json
 from typing import Optional
 
@@ -57,6 +58,8 @@ __all__ = [
     "canonical_content",
     "canonical_content_bytes",
     "content_digest",
+    "verify_seal",
+    "normalise_organisation",
     "stamp_report_hash",
 ]
 
@@ -124,8 +127,33 @@ def effective_explanation_text(
 
 # ---------- canonical serialisation ----------
 
-def canonical_content(report: ComplianceReport) -> dict:
+def normalise_organisation(organisation: Optional[str]) -> Optional[str]:
+    """The organisation name as it participates in the seal, or None if absent.
+
+    Surrounding whitespace is stripped, and a blank string is treated as *absent*
+    rather than as an organisation literally named "". This matters because the
+    Streamlit text input yields ``""`` when the field has never been filled in,
+    and that must hash the same as passing nothing at all.
+    """
+    if organisation is None:
+        return None
+    cleaned = organisation.strip()
+    return cleaned or None
+
+
+def canonical_content(
+    report: ComplianceReport, *, organisation: Optional[str] = None
+) -> dict:
     """Build the canonical, deterministic view of a report's committed content.
+
+    ``organisation``, when supplied, is committed to under an ``"organisation"`` key
+    and therefore participates in :func:`content_digest`. This is what makes the
+    tamper-evidence demonstration work: seal a report under one organisation name,
+    edit the name, re-hash, and the digest no longer matches the seal.
+
+    When ``organisation`` is None (or blank) the key is OMITTED ENTIRELY rather than
+    written as null, so the dict — and every digest derived from it — is byte-for-byte
+    what this function produced before the parameter existed. Existing seals stay valid.
 
     Ordering is by ``finding_id`` so that the digest does not depend on the
     order findings happened to arrive in. Nothing here reads the clock: the only
@@ -175,7 +203,7 @@ def canonical_content(report: ComplianceReport) -> dict:
             }
         )
 
-    return {
+    content = {
         "schema": CONTENT_SCHEMA,
         "report_id": report.report_id,
         "generated_at": report.generated_at.isoformat(),
@@ -183,28 +211,70 @@ def canonical_content(report: ComplianceReport) -> dict:
         "excluded_finding_ids": sorted(excluded),
     }
 
+    org = normalise_organisation(organisation)
+    if org is not None:
+        # Present only when supplied: absence must be indistinguishable from the
+        # pre-parameter serialisation, so never write an explicit null here.
+        content["organisation"] = org
 
-def canonical_content_bytes(report: ComplianceReport) -> bytes:
+    return content
+
+
+def canonical_content_bytes(
+    report: ComplianceReport, *, organisation: Optional[str] = None
+) -> bytes:
     """Canonical content as deterministic UTF-8 JSON bytes.
 
     ``sort_keys`` plus fixed separators plus ``ensure_ascii`` mean identical
     committed content always produces identical bytes on any platform.
     """
     return json.dumps(
-        canonical_content(report),
+        canonical_content(report, organisation=organisation),
         sort_keys=True,
         ensure_ascii=True,
         separators=(",", ":"),
     ).encode("utf-8")
 
 
-def content_digest(report: ComplianceReport) -> str:
+def content_digest(
+    report: ComplianceReport, *, organisation: Optional[str] = None
+) -> str:
     """SHA-256 hexdigest of the report's canonical committed content.
 
     Stable across runs for identical committed content, and sensitive to any
-    change in it. This is the digest printed in the PDF footer.
+    change in it — including a change to ``organisation``, which is precisely
+    what :func:`verify_seal` detects. This is the digest printed in the PDF footer.
+
+    With ``organisation`` omitted the digest equals the one this function returned
+    before the parameter existed.
     """
-    return sha256_of_bytes(canonical_content_bytes(report))
+    return sha256_of_bytes(canonical_content_bytes(report, organisation=organisation))
+
+
+def verify_seal(
+    report: ComplianceReport, sealed: str, *, organisation: Optional[str] = None
+) -> bool:
+    """True if ``sealed`` still matches the report's content under ``organisation``.
+
+    ``sealed`` is a digest previously returned by :func:`content_digest`. This
+    recomputes the digest over the report's current committed content plus the
+    organisation name supplied now, and compares. Any edit to a committed field —
+    or to the organisation name the report was sealed under — breaks the match,
+    which is the tamper-evidence property Stage 5 advertises.
+
+    Comparison is constant-time (:func:`hmac.compare_digest`) so the check leaks
+    nothing about how much of a candidate digest was correct. Case and surrounding
+    whitespace on ``sealed`` are normalised first; a non-string or empty seal is
+    simply not a match.
+    """
+    if not isinstance(sealed, str):
+        return False
+    candidate = sealed.strip().lower()
+    if not candidate:
+        return False
+    return hmac.compare_digest(
+        candidate, content_digest(report, organisation=organisation)
+    )
 
 
 # ---------- caller helper ----------
