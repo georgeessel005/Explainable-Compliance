@@ -19,8 +19,10 @@ finding stays AWAITING_REVIEW, and it does NOT count toward review coverage. Exa
 one MODIFY decision is appended, carrying the real replacement prose, when the analyst
 presses Save. This is deliberate: recording a MODIFY on selection would let a report be
 compiled containing a finding labelled "Modified" whose explanation was never modified,
-which is a false statement in the submitted artefact. A finding with an open, uncommitted
-edit is shown as pending on its card and counted as outstanding in the gate banner.
+which is a false statement in the submitted artefact. An UNDECIDED finding with an open,
+uncommitted edit is shown as pending on its card and counted as outstanding in the gate
+banner. Re-opening the editor on an already-decided finding is not pending: the recorded
+decision stands, and still counts toward coverage, until a replacement is saved.
 """
 from __future__ import annotations
 
@@ -54,10 +56,27 @@ _STATUS_FOR_DECISION = {
 
 # ---------- state helpers ----------
 
-def status_of(finding_id: str, decisions: list[AnalystDecision]) -> FindingStatus:
+def _resolved_map(
+    decisions: list[AnalystDecision], resolved: Optional[dict] = None
+) -> dict:
+    """The effective-decision map, resolving it only when the caller has not already.
+
+    `gate.resolve_decisions` is the single source of truth for the effective decision
+    and is never re-implemented here. It is O(len(decisions)), so calling it once per
+    finding across a 500-finding set made every idle rerun O(n²). A render pass resolves
+    once and threads the result through; every function keeps working unchanged when the
+    argument is omitted (tests and headless callers pass nothing).
+    """
+    return resolve_decisions(decisions) if resolved is None else resolved
+
+
+def status_of(
+    finding_id: str,
+    decisions: list[AnalystDecision],
+    resolved: Optional[dict] = None,
+) -> FindingStatus:
     """Current status of one finding, derived from its latest decision."""
-    resolved = resolve_decisions(decisions)
-    decision = resolved.get(finding_id)
+    decision = _resolved_map(decisions, resolved).get(finding_id)
     if decision is None:
         return FindingStatus.AWAITING_REVIEW
     return _STATUS_FOR_DECISION[decision.decision]
@@ -166,10 +185,12 @@ def _pending_store() -> set:
 
 
 def _has_committed_modify(
-    finding_id: str, decisions: list[AnalystDecision]
+    finding_id: str,
+    decisions: list[AnalystDecision],
+    resolved: Optional[dict] = None,
 ) -> bool:
     """True when this finding's effective decision is a Modify carrying real prose."""
-    latest = resolve_decisions(decisions).get(finding_id)
+    latest = _resolved_map(decisions, resolved).get(finding_id)
     return (
         latest is not None
         and latest.decision == DecisionType.MODIFY
@@ -187,35 +208,95 @@ def clear_edit_pending(finding_id: str) -> None:
     _pending_store().discard(finding_id)
 
 
-def edit_pending(finding_id: str, decisions: list[AnalystDecision]) -> bool:
-    """True when Modify is selected for this finding but no edit has been committed.
+def edit_open(finding_id: str) -> bool:
+    """True when the Modify editor is open on this finding, decided or not.
+
+    The raw marker, with no judgement about whether the finding is outstanding. Used to
+    restore the "Modify" selection after Streamlit drops widget state, and to caption a
+    finding that is being re-edited AFTER it was decided. `edit_pending` is the one that
+    answers the accountability question ("does this carry no decision yet?").
+    """
+    return finding_id in _pending_store()
+
+
+def edit_pending(
+    finding_id: str,
+    decisions: list[AnalystDecision],
+    resolved: Optional[dict] = None,
+) -> bool:
+    """True when Modify is selected for this finding and it carries NO decision at all.
 
     Two ways that can happen:
 
-    * The analyst has picked "Modify" in the card's selectbox and not yet pressed Save.
-      No decision has been recorded at all, so the finding is still AWAITING_REVIEW and
-      still outstanding for coverage — this function is what makes that visible.
+    * The analyst has picked "Modify" in the card's selectbox on a finding that has never
+      been decided, and has not yet pressed Save. No decision has been recorded at all,
+      so the finding is still AWAITING_REVIEW and still outstanding for coverage — this
+      function is what makes that visible.
     * A MODIFY decision exists but carries no replacement prose (not reachable from this
       UI any more, since only Save records a MODIFY; kept so such a decision arriving
       from anywhere else still reads as pending rather than as a completed edit).
+
+    Re-opening the editor on an ALREADY-DECIDED finding is deliberately NOT pending. The
+    recorded Approve / Escalate / committed Modify still stands and still counts toward
+    coverage until a replacement is saved, so calling it "no decision yet, still
+    outstanding" would be a false statement on the screen an assessor reads to judge the
+    HITL control — while the gate itself (correctly) went on counting the decision.
+    That state is captioned honestly on the card via `edit_open` instead.
     """
-    latest = resolve_decisions(decisions).get(finding_id)
-    if (
-        latest is not None
-        and latest.decision == DecisionType.MODIFY
-        and not (latest.modified_explanation or "").strip()
-    ):
-        return True
-    if _has_committed_modify(finding_id, decisions):
-        return False
+    latest = _resolved_map(decisions, resolved).get(finding_id)
+    if latest is not None:
+        # A prose-less MODIFY is not a completed edit, so it still reads as pending.
+        return (
+            latest.decision == DecisionType.MODIFY
+            and not (latest.modified_explanation or "").strip()
+        )
     return finding_id in _pending_store()
 
 
 def pending_edit_ids(
-    finding_ids: list[str], decisions: list[AnalystDecision]
+    finding_ids: list[str],
+    decisions: list[AnalystDecision],
+    resolved: Optional[dict] = None,
 ) -> list[str]:
     """Findings with Modify selected but no committed edit, in finding order."""
-    return [fid for fid in finding_ids if edit_pending(fid, decisions)]
+    resolved = _resolved_map(decisions, resolved)
+    return [fid for fid in finding_ids if edit_pending(fid, decisions, resolved)]
+
+
+def sync_pending_edits(
+    finding_ids: list[str],
+    decisions: list[AnalystDecision],
+    resolved: Optional[dict] = None,
+) -> None:
+    """Reconcile the pending-edit store with the live selectbox state, BEFORE rendering.
+
+    The cards mark/clear the marker themselves, but they run after the gate banner and
+    after their own status chip — so on the very frame the analyst picks "Modify" the
+    marker did not exist yet and neither indicator showed it; both only appeared on the
+    next interaction. Streamlit has already written the new selection into session_state
+    by the time the script reruns, so reading it here makes the pending state visible on
+    the same frame it is created.
+
+    Only ids whose selectbox is actually present in session_state are touched: a finding
+    on another page has no widget state, and its open edit must survive.
+    """
+    try:
+        import streamlit as st
+    except Exception:  # noqa: BLE001 - headless caller: nothing to sync.
+        return
+
+    resolved = _resolved_map(decisions, resolved)
+    for fid in finding_ids:
+        key = f"decision__{fid}"
+        if key not in st.session_state:
+            continue
+        if (
+            st.session_state[key] == "Modify"
+            and not _has_committed_modify(fid, decisions, resolved)
+        ):
+            mark_edit_pending(fid)
+        else:
+            clear_edit_pending(fid)
 
 
 # ---------- gate banner ----------
@@ -394,18 +475,23 @@ def render_finding_card(
     explanations_by_id: dict,
     analyst_id: str = UNNAMED_ANALYST,
     display_no: int = 1,
+    resolved: Optional[dict] = None,
 ) -> None:
     """Render one finding as a collapsed accordion with a Decision selectbox.
 
     Widget keys are derived from `finding.finding_id`, which is unique and stable
     across reruns — with 300+ accordions on screen a key collision would silently
     reset another finding's decision widget.
+
+    `resolved` is the render pass's already-computed effective-decision map (see
+    `_resolved_map`); omit it and the card resolves its own.
     """
     import streamlit as st
     from src.ui.chrome import severity_chip
 
     fid = finding.finding_id
-    status = status_of(fid, decisions)
+    resolved = _resolved_map(decisions, resolved)
+    status = status_of(fid, decisions, resolved)
     asset = finding.asset
 
     with st.expander(accordion_title(finding, display_no), expanded=False):
@@ -419,13 +505,21 @@ def render_finding_card(
                 unsafe_allow_html=True,
             )
             st.markdown(_status_chip(status))
-            if edit_pending(fid, decisions):
+            if edit_pending(fid, decisions, resolved):
                 st.caption(
                     "⚠ **Modify selected, nothing saved yet.** No decision has been "
                     "recorded for this finding, so it still counts as outstanding at "
                     "the Stage 5 gate, and the generated text below is still what the "
                     "report would carry. Save the modified explanation in the Decision "
                     "panel to commit it."
+                )
+            elif edit_open(fid):
+                # Already decided and re-opened for editing. Saying "no decision has been
+                # recorded" here would contradict both the status chip above and the gate.
+                st.caption(
+                    "✏ **Editing a decided finding.** The recorded decision above stands "
+                    "and still counts toward Stage 5 coverage until you save a "
+                    "replacement explanation, which appends a new Modify decision."
                 )
             st.caption(
                 f"{asset.hostname} ({asset.asset_id}) · {asset.operating_system} · "
@@ -504,7 +598,7 @@ def render_finding_card(
             # pending marker is what restores "Modify" if Streamlit dropped this
             # widget's state (see PENDING_MODIFY_KEY).
             default_label = _LABEL_FOR_STATUS.get(status, SELECT_PLACEHOLDER)
-            if edit_pending(fid, decisions):
+            if edit_open(fid) or edit_pending(fid, decisions, resolved):
                 default_label = "Modify"
             default_index = DECISION_OPTIONS.index(default_label)
             choice = st.selectbox(
@@ -540,7 +634,7 @@ def render_finding_card(
         # Track the open edit. Marking is what makes a Modify-in-progress survive a
         # rerun, show as pending on the card and in the gate banner, and be spared by
         # bulk approve. Any other selection clears it.
-        if choice == "Modify" and not _has_committed_modify(fid, decisions):
+        if choice == "Modify" and not _has_committed_modify(fid, decisions, resolved):
             mark_edit_pending(fid)
         else:
             clear_edit_pending(fid)
@@ -567,12 +661,19 @@ def render_finding_card(
                     height=160,
                     help="The edited text replaces the generated explanation in the report.",
                 )
-                if edit_pending(fid, decisions):
+                if edit_pending(fid, decisions, resolved):
                     st.caption(
                         "⚠ **No decision recorded yet.** Selecting Modify only opens "
                         "this editor — the finding is still outstanding at the gate "
                         "until you save. Save records one Modify decision carrying the "
                         "text above, and one audit entry."
+                    )
+                else:
+                    st.caption(
+                        f"This finding is already recorded as **{status.value}**. That "
+                        "decision stands until you save; saving appends one new Modify "
+                        "decision carrying the text above, and one audit entry. The "
+                        "earlier decision stays in the history."
                     )
                 if st.button(
                     "Save modified explanation",
@@ -652,8 +753,15 @@ def render_review_stage(
 
     explanations_by_id = {e.finding_id: e for e in (explanations or [])}
 
+    # ONE resolution of the append-only history for the whole render pass. Every
+    # per-finding status/pending question below reads this map instead of re-resolving,
+    # which is what keeps an idle rerun O(n) rather than O(n²) at 500 findings.
+    resolved = resolve_decisions(decisions)
+
     all_ids = [f.finding_id for f in findings]
-    pending_ids = pending_edit_ids(all_ids, decisions)
+    # Pick up a Modify selected on THIS frame before anything that reports it renders.
+    sync_pending_edits(all_ids, decisions, resolved)
+    pending_ids = pending_edit_ids(all_ids, decisions, resolved)
     gate_open = render_gate_banner(
         decisions, finding_ids=all_ids, pending_ids=pending_ids
     )
@@ -675,7 +783,7 @@ def render_review_stage(
     if status_filter:
         visible = [
             f for f in findings
-            if status_of(f.finding_id, decisions).value in status_filter
+            if status_of(f.finding_id, decisions, resolved).value in status_filter
         ]
 
     if not visible:
@@ -717,7 +825,7 @@ def render_review_stage(
     def _bulk_targets(candidates):
         return [
             f for f in candidates
-            if status_of(f.finding_id, decisions) == FindingStatus.AWAITING_REVIEW
+            if status_of(f.finding_id, decisions, resolved) == FindingStatus.AWAITING_REVIEW
             and f.finding_id not in pending_set
         ]
 
@@ -771,6 +879,7 @@ def render_review_stage(
             explanations_by_id=explanations_by_id,
             analyst_id=analyst_id,
             display_no=display_numbers.get(finding.finding_id, 1),
+            resolved=resolved,
         )
 
     return gate_open

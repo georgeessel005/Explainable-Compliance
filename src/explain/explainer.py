@@ -592,11 +592,24 @@ def explain(
     plain_english = " ".join(p.strip() for p in parts if p and p.strip())
 
     if resolved_rule is not None and resolved_rule.remediation_steps:
-        remediation = list(resolved_rule.remediation_steps)
+        raw_steps = list(resolved_rule.remediation_steps)
     else:
-        remediation = list(
+        raw_steps = list(
             _FALLBACK_REMEDIATION.get(finding.issue_code, _GENERIC_REMEDIATION)
         )
+
+    # Remediation steps are author-supplied templates exactly like the explanation
+    # clause above ("Apply the vendor update for {cve_id} to {hostname}"), so they
+    # must go through the same context and the same _SafeFormatter. Rendering them
+    # verbatim shipped literal {hostname}/{cve_id} into the review cards and the
+    # PDF; rendering them here resolves those holes, and for the majority of
+    # findings that have no CVE/CVSS/patch date degrades them to prose rather than
+    # raising or emitting "None".
+    remediation = [
+        rendered
+        for rendered in (_render(step, context) for step in raw_steps)
+        if rendered
+    ]
 
     return Explanation(
         finding_id=finding.finding_id,

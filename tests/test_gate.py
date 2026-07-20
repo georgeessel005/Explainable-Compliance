@@ -336,13 +336,16 @@ def test_compile_path_unblocks_once_escalation_resolved(app_session):
     assert report is not None
     assert report.sha256_hash and len(report.sha256_hash) == 64
     assert st.session_state["report_bytes"][:5] == b"%PDF-"
-    assert os.path.isfile(report.pdf_path)
+    # The temp PDF is scratch space: its bytes are the artefact (served from
+    # session_state) and its digest is report.sha256_hash, so the file itself is
+    # reclaimed at the end of the compile rather than accumulating in a shared /tmp.
+    # A path pointing at a file that no longer exists would be a dangling reference.
+    assert report.pdf_path is None, "the temp PDF must not outlive the compile"
+    assert st.session_state["report_path"] is None
 
     actions = [e.action for e in st.session_state["audit_log"].entries]
     assert "STAGE_5_BLOCKED" in actions   # the refusal is retained
     assert "STAGE_5_REPORT" in actions
-
-    os.remove(report.pdf_path)  # tidy the temp dir
 
 
 def test_compile_path_requires_full_coverage_before_building(app_session):

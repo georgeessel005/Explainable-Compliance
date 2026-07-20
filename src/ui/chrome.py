@@ -26,6 +26,12 @@ GREY_TEXT = "#718096"
 
 _STEPS = ["Upload", "Map", "Explain", "Approve", "Generate"]
 
+#: Returned by `current_step` when the pipeline is FINISHED: the gate is open and a
+#: report has been sealed. One past the last step, so every step — Generate included —
+#: renders complete. Without it "Generate" could never turn green, because step 5 means
+#: "you are here".
+COMPLETED_STEP = len(_STEPS) + 1
+
 _SEVERITY_STYLE = {
     "Critical": ("#c53030", "#fff5f5"),
     "High": ("#c05621", "#fffaf0"),
@@ -79,16 +85,23 @@ def current_step(
     review_complete: bool,
     has_report: bool,
 ) -> int:
-    """1-based index of the step the analyst is currently on.
+    """1-based index of the step the analyst is currently on, or `COMPLETED_STEP`.
 
     Presentation only. Derived strictly from what already exists in session state;
     `review_complete` is supplied by the caller from `gate_status`, never recomputed
     here, so the stepper cannot disagree with the gate.
+
+    The LIVE gate is tested before `has_report`, and deliberately so. A report compiled
+    earlier does not survive a later escalation as a claim about the present: with the
+    gate red, Stage 5 renders "blocked" and withholds the report, so a stepper still
+    ticking Approve and highlighting Generate would contradict the control on the same
+    screen. Going backwards is the honest reading — the analyst really does have review
+    work in hand again.
     """
-    if has_report:
-        return 5
     if review_complete and has_explanations:
-        return 5
+        # Gate open. A sealed report on top of that is the finished state; without one,
+        # Generate is the step in hand.
+        return COMPLETED_STEP if has_report else 5
     if has_explanations:
         return 4
     if has_findings:
@@ -99,7 +112,10 @@ def current_step(
 
 
 def render_stepper(step: int) -> None:
-    """Numbered 5-step progress rail. `step` is 1-based; earlier steps read complete."""
+    """Numbered 5-step progress rail. `step` is 1-based; earlier steps read complete.
+
+    `step == COMPLETED_STEP` (6) is past every step, so the whole rail reads complete.
+    """
     import streamlit as st
 
     cells: list[str] = []
@@ -176,12 +192,19 @@ def severity_chip(label: str) -> str:
 
 
 def render_seal_panel(digest: str, *, artefact_digest: Optional[str] = None) -> None:
-    """TAMPER-EVIDENT SEAL panel: the sealed content digest in monospace."""
+    """TAMPER-EVIDENT SEAL panel: the sealed content digest in monospace.
+
+    Two different digests appear here and each says which it is. The headline value is
+    the CONTENT seal (findings, decisions and the organisation name — the thing the PDF
+    footer commits to); the small value underneath is the SHA-256 of the PDF file. An
+    analyst re-hashing a downloaded PDF must compare it with the second, so labelling
+    the headline only "SHA-256" left the two silently interchangeable.
+    """
     import streamlit as st
 
     extra = (
         f'<div style="color:#829ab1;font-size:0.72rem;margin-top:0.6rem;">'
-        f"PDF artefact SHA-256 &middot; {artefact_digest}</div>"
+        f"PDF artefact SHA-256 (the downloaded file) &middot; {artefact_digest}</div>"
         if artefact_digest
         else ""
     )
@@ -189,7 +212,11 @@ def render_seal_panel(digest: str, *, artefact_digest: Optional[str] = None) -> 
         f"""<div style="background:{NAVY};border-radius:12px;padding:1rem 1.15rem;
         margin:0.5rem 0 0.75rem 0;">
   <div style="color:#9fb3c8;font-size:0.74rem;font-weight:700;letter-spacing:0.09em;">
-    TAMPER-EVIDENT SEAL &middot; SHA-256</div>
+    TAMPER-EVIDENT SEAL &middot; CONTENT SHA-256</div>
+  <div style="color:#829ab1;font-size:0.72rem;margin-top:0.15rem;font-weight:400;
+              letter-spacing:0;">
+    Covers the committed findings, decisions and organisation name &mdash;
+    not the PDF bytes.</div>
   <div style="color:#ffffff;font-family:ui-monospace,'Cascadia Code',Consolas,monospace;
               font-size:0.8rem;word-break:break-all;margin-top:0.45rem;">{digest}</div>
   {extra}

@@ -37,6 +37,10 @@ def functional_correctness(
     there is nothing to compare against. Fabricating a correctness number without a
     baseline would misrepresent the evaluation.
 
+    Also None when there are no findings at all: a baseline uploaded before the pipeline
+    has run has nothing to score, and "0.0% correct" is a claim about output that does
+    not exist yet. "Not evaluated" is the truthful answer; 0% is a failure report.
+
     `baseline` maps finding_id -> expected attributes, e.g.
         {"F-0001": {"issue_code": "PATCH_MISSING", "rule_id": "CE-PATCH-001"}}
     A finding matches when every supplied expected attribute equals the actual value.
@@ -46,7 +50,7 @@ def functional_correctness(
     if not baseline:
         return None
     if not findings:
-        return 0.0
+        return None
 
     by_id = {f.finding_id: f for f in findings}
     matched = 0
@@ -212,10 +216,18 @@ def render_metrics(
 
     with col1:
         st.metric("Functional correctness", _pct(fc))
-        st.caption(
-            f"vs baseline of {len(baseline)} finding(s)" if baseline
-            else "No expected-output baseline supplied"
-        )
+        if not baseline:
+            caption = "No expected-output baseline supplied"
+        elif not findings:
+            # A baseline can be uploaded before the pipeline runs. There is nothing to
+            # score yet, so say so rather than implying a 0% result was measured.
+            caption = (
+                f"Baseline of {len(baseline)} finding(s) loaded — not evaluated until "
+                "the pipeline has run"
+            )
+        else:
+            caption = f"vs baseline of {len(baseline)} finding(s)"
+        st.caption(caption)
 
     with col2:
         st.metric("Cross-mapping fidelity", _pct(fidelity))
@@ -308,7 +320,8 @@ def render_metrics(
         st.markdown(
             """
 - **Functional correctness** — share of findings matching a supplied expected-output
-  baseline. Shows **N/A** when no baseline is loaded; no baseline means no claim.
+  baseline. Shows **N/A** when no baseline is loaded, and when no findings have been
+  produced yet — no baseline (or nothing to score) means no claim.
 - **Cross-mapping fidelity** — share of findings whose control mappings reach at least
   one Cyber Essentials (or CE Plus) pillar *and* at least one ISO/IEC 27001 Annex A
   control, with `frameworks_breached` covering every framework mapped.

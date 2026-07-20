@@ -529,21 +529,34 @@ def test_back_to_back_reports_get_distinct_ids_and_paths(app_session):
 
     first = app.compile_report()
     assert first is not None
-    first_id, first_path = first.report_id, first.pdf_path
+    first_id, first_bytes = first.report_id, st.session_state["report_bytes"]
 
     second = app.compile_report()
     assert second is not None
-    second_id, second_path = second.report_id, second.pdf_path
+    second_id = second.report_id
 
     assert first_id != second_id, "two reports collided on report_id"
-    assert first_path != second_path, "two reports collided on temp PDF path"
     assert first_id.startswith("RPT-")
     # <date>-<time>-<micros>-<uuid8> => at least 5 dash-separated parts after RPT.
     assert len(first_id.split("-")) >= 5
 
-    for path in (first_path, second_path):
-        if path and os.path.isfile(path):
-            os.remove(path)
+    # The temp PDF path is DERIVED from report_id (`<tmp>/<report_id>.pdf`), so
+    # distinct ids are exactly what stops two same-second compiles from overwriting
+    # each other's file on a shared /tmp -- the original subject of this test. The
+    # path can no longer be read off the report because the temp file is now
+    # reclaimed at the end of every compile, so both halves are asserted here:
+    # the ids are distinct, and neither scratch file survives.
+    assert first.pdf_path is None and second.pdf_path is None, (
+        "the temp PDF must not outlive the compile"
+    )
+    tmp_dir = tempfile.gettempdir()
+    for report_id in (first_id, second_id):
+        leaked = os.path.join(tmp_dir, f"{report_id}.pdf")
+        assert not os.path.isfile(leaked), f"temp PDF leaked: {leaked}"
+
+    # Each compile still produced a real artefact; only the scratch file is gone.
+    assert first_bytes[:5] == b"%PDF-"
+    assert st.session_state["report_bytes"][:5] == b"%PDF-"
 
 
 def test_report_id_format_is_collision_resistant():

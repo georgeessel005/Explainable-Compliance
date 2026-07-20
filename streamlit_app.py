@@ -75,6 +75,19 @@ SEED = 42
 DEFAULT_N_RECORDS = 120
 DEFAULT_N_MALFORMED = 7
 
+#: Plain (non-widget) mirror of the Stage 5 "Organisation name" input.
+#:
+#: Streamlit DISCARDS the state of any widget that is not instantiated during a script
+#: run. Every Stage 4 decision path ends in `st.rerun()`, which aborts the script inside
+#: the review tab — before the Stage 5 tab, and therefore before the organisation
+#: text_input, is ever created. Without a home outside widget state the analyst's typed
+#: organisation is silently wiped by the first Approve: the PDF loses its ORGANIZATION
+#: block, and a seal taken over that name later reports a FALSE "SEAL BROKEN" against a
+#: name that vanished on its own. The value is therefore mirrored into this ordinary key
+#: on every change and the widget is re-seeded from it at the top of every run. Exactly
+#: the defence src/ui/review.PENDING_MODIFY_KEY documents for uncommitted edits.
+ORG_MEMO_KEY = "organisation_value"
+
 
 def _dataset_for(n: int, malformed: int) -> str:
     """Path to the dataset for the requested shape. NEVER writes into the repo.
@@ -128,7 +141,12 @@ def init_state() -> None:
         "sealed_digest": None,
         "sealed_organisation": None,
         "seal_check": None,
+        # The organisation name the LAST integrity check was computed under. A verdict
+        # is only ever about the name it was checked against, so this is what makes a
+        # later edit retire the banner instead of leaving it standing under a new name.
+        "seal_check_org": None,
         "organisation": "",
+        ORG_MEMO_KEY: "",
         "n_records": DEFAULT_N_RECORDS,
         "n_malformed": DEFAULT_N_MALFORMED,
         # Deliberately EMPTY, not the literal "analyst": the Stage 4 callout promises
@@ -151,6 +169,45 @@ def _audit() -> AuditLog:
 
 def _analyst() -> str:
     return (st.session_state.get("analyst_id") or "").strip() or UNNAMED_ANALYST
+
+
+def _organisation_text() -> str:
+    """The organisation the analyst typed — from widget state, else from the memo.
+
+    The widget's own state is the live value while Stage 5 is on screen; the memo is
+    what survives a rerun that never rendered Stage 5. Reading both, in that order,
+    means the value is correct whichever of the two a given run happens to have.
+    """
+    return (
+        st.session_state.get("organisation")
+        or st.session_state.get(ORG_MEMO_KEY)
+        or ""
+    )
+
+
+def _remember_organisation() -> None:
+    """`on_change` for the organisation input: mirror it, and retire any seal verdict.
+
+    The mirror is what makes the typed name survive Stage 4 (see ORG_MEMO_KEY). Clearing
+    `seal_check` is a separate obligation: the organisation is sealed over, so an
+    "intact" banner is a statement about the name it was checked under and stops being
+    true the instant that name is edited.
+    """
+    st.session_state[ORG_MEMO_KEY] = st.session_state.get("organisation") or ""
+    st.session_state["seal_check"] = None
+    st.session_state["seal_check_org"] = None
+
+
+def _restore_organisation() -> None:
+    """Re-seed the Stage 5 input from the memo, before any widget is instantiated.
+
+    Only fills a blank: a value the analyst has actually typed on this run is never
+    overwritten, and a deliberately cleared field stays cleared (the on_change callback
+    empties the memo at the same time).
+    """
+    remembered = st.session_state.get(ORG_MEMO_KEY) or ""
+    if remembered and not (st.session_state.get("organisation") or ""):
+        st.session_state["organisation"] = remembered
 
 
 def _reset_downstream(from_stage: int) -> None:
@@ -185,6 +242,22 @@ def _reset_downstream(from_stage: int) -> None:
         # showing an "Approve" selection for a decision that no longer exists.
         for key in [k for k in st.session_state if k.startswith("decision__")]:
             st.session_state[key] = "— Select —"
+    # A sealed report is an artefact, and it is about to be thrown away because the
+    # findings underneath it no longer exist. Discarded decisions are audited; a
+    # discarded REPORT disappearing silently would be the same hole in the same trail.
+    stale_report: Optional[ComplianceReport] = st.session_state.get("report")
+    if stale_report is not None:
+        _audit().record_stage(
+            action="REPORT_DISCARDED",
+            actor=_analyst(),
+            details=(
+                f"Sealed report {stale_report.report_id} discarded because an earlier "
+                "stage was re-run and the finding set was rebuilt. Its content seal "
+                f"{st.session_state.get('sealed_digest') or '(none)'} no longer has a "
+                "live report behind it. Any copy already downloaded remains valid "
+                "against that seal; recompile to seal the rebuilt findings."
+            ),
+        )
     st.session_state["report"] = None
     st.session_state["report_bytes"] = None
     st.session_state["report_hash"] = None
@@ -192,6 +265,7 @@ def _reset_downstream(from_stage: int) -> None:
     st.session_state["sealed_digest"] = None
     st.session_state["sealed_organisation"] = None
     st.session_state["seal_check"] = None
+    st.session_state["seal_check_org"] = None
 
 
 # ======================================================================================
@@ -211,8 +285,9 @@ def run_stage_1() -> None:
         result = load_and_validate(path)
     except FileNotFoundError:
         st.session_state["last_error"] = (
-            f"Dataset not found at `{path}`. Generate it first:\n\n"
-            "```\n./.venv/Scripts/python.exe -m src.data.generate_synthetic\n```"
+            f"Dataset not found at `{path}`. Generate it first, from the project "
+            "root with the project's Python:\n\n"
+            "```\npython -m src.data.generate_synthetic\n```"
         )
         return
     except Exception as exc:  # noqa: BLE001
@@ -360,14 +435,21 @@ def compile_report() -> Optional[ComplianceReport]:
     report_id = (
         f"RPT-{datetime.now(timezone.utc):%Y%m%d-%H%M%S-%f}-{uuid.uuid4().hex[:8]}"
     )
+    # DEEP copies, not the live session objects. Pydantic copies the list but not the
+    # models inside it, so `report.explanations[0] is st.session_state["explanations"][0]`
+    # would be True — and Stage 4 edits `explanation.plain_english` IN PLACE when a
+    # Modify is committed. A sealed report would therefore change its own content
+    # retroactively and report a FALSE "SEAL BROKEN" for review activity that happened
+    # after it was sealed. A seal is only meaningful over content that cannot move, so
+    # the report takes its own snapshot here and later review cannot reach into it.
     report = ComplianceReport(
         report_id=report_id,
-        findings=findings,
-        explanations=explanations,
-        decisions=decisions,
+        findings=[f.model_copy(deep=True) for f in findings],
+        explanations=[e.model_copy(deep=True) for e in explanations],
+        decisions=[d.model_copy(deep=True) for d in decisions],
     )
 
-    organisation = (st.session_state.get("organisation") or "").strip() or None
+    organisation = _organisation_text().strip() or None
     out_path = os.path.join(tempfile.gettempdir(), f"{report_id}.pdf")
     try:
         artefact_digest = build_and_hash(report, out_path, organisation=organisation)
@@ -380,6 +462,23 @@ def compile_report() -> Optional[ComplianceReport]:
             action="STAGE_5_ERROR", actor=_analyst(), details=str(exc)
         )
         return None
+    finally:
+        # The temp PDF is scratch space for ReportLab, nothing more: every byte of it is
+        # now held in `pdf_bytes` and served straight from memory by the download button,
+        # and `artefact_digest` was taken from those same bytes, so the file has no
+        # remaining reader. Left behind it accumulates forever in a shared /tmp (QA
+        # measured 91 files / 33 MB). Removed in `finally` so a failed build cleans up
+        # its half-written file too. Best-effort: a locked or already-gone file must
+        # never turn a successfully sealed report into a Stage 5 error.
+        try:
+            os.unlink(out_path)
+        except OSError:
+            pass
+        # `build_and_hash` stamped the path onto the report. The file it names is gone,
+        # so the field would be a dangling reference; the artefact now lives in
+        # session_state["report_bytes"] and its digest in report.sha256_hash (still the
+        # SHA-256 of exactly those bytes — the hash is NOT recomputed or weakened here).
+        report.pdf_path = None
 
     elapsed = time.perf_counter() - started
 
@@ -390,13 +489,17 @@ def compile_report() -> Optional[ComplianceReport]:
     st.session_state["report"] = report
     st.session_state["report_bytes"] = pdf_bytes
     st.session_state["report_hash"] = artefact_digest
-    st.session_state["report_path"] = out_path
+    # No path: the temp file is gone (see the `finally` above) and the bytes above are
+    # the artefact. Keeping a path here would invite a later reader to open a file that
+    # no longer exists. `report.pdf_path` still records where it was built.
+    st.session_state["report_path"] = None
     st.session_state["sealed_digest"] = sealed
     # The organisation name AT THE MOMENT OF SEALING. Verification compares the seal
     # against the CURRENT name, so keeping the sealed one is what makes a later edit
     # detectable rather than silently re-sealed.
     st.session_state["sealed_organisation"] = organisation
     st.session_state["seal_check"] = None
+    st.session_state["seal_check_org"] = None
     st.session_state["stage_times"]["Stage 5 — Report"] = elapsed
     st.session_state["last_error"] = None
 
@@ -441,13 +544,20 @@ def render_sidebar() -> None:
         st.title("Pipeline Control")
         st.caption("Stages 1-3 run here. Stage 4 (below) cannot be skipped.")
 
+        # ASSET RECORDS, not findings: one record can breach several rules, so 20
+        # records yield ~48 findings. Labelling it "findings" made the sidebar
+        # contradict itself ("Findings awaiting review: 48" beside a slider on 20).
         st.slider(
-            "Synthetic findings to generate",
+            "Synthetic asset records to generate",
             min_value=20,
             max_value=200,
             step=10,
             key="n_records",
-            help="Number of valid synthetic asset records the generator produces.",
+            help=(
+                "Number of valid synthetic asset records the generator produces. "
+                "Stage 2 raises one finding per rule each record breaches, so the "
+                "finding count is higher than this."
+            ),
         )
         st.slider(
             "Deliberately malformed records",
@@ -497,9 +607,11 @@ def render_sidebar() -> None:
         )
         st.metric("Findings awaiting review", status["outstanding_count"] if findings else 0)
         st.metric("Rejected at Stage 1", len(result.rejected) if result else 0)
+        # "0 / 0" on a cold load reads as a ratio of a real workload. With no findings
+        # loaded there is nothing to be reviewed out of, so say so with a dash.
         st.metric(
             "Reviewed at Stage 4",
-            f"{status['reviewed_count'] if findings else 0} / {len(findings)}",
+            f"{status['reviewed_count']} / {len(findings)}" if findings else "—",
         )
 
         st.divider()
@@ -618,10 +730,19 @@ def render_report_stage() -> None:
             icon="✅",
         )
 
+    # `on_change` is not cosmetic. It mirrors the typed name into ORG_MEMO_KEY, which is
+    # the only copy that survives a Stage 4 rerun (this tab is not rendered on those
+    # runs, so Streamlit discards this widget's state), and it retires any standing seal
+    # verdict, which stops being true the moment the sealed-over name changes.
     st.text_input(
         "Organisation name for report header",
         key="organisation",
         placeholder="e.g. Northwind Manufacturing Ltd",
+        on_change=_remember_organisation,
+        help=(
+            "Rendered on the report title page and sealed into the content digest. "
+            "Kept across Stage 4 decisions."
+        ),
     )
 
     if st.button(
@@ -665,7 +786,7 @@ def render_report_stage() -> None:
     verify_col, result_col = st.columns([1, 3])
     if verify_col.button("Verify Integrity", key="verify_seal"):
         sealed = st.session_state.get("sealed_digest") or ""
-        current_org = (st.session_state.get("organisation") or "").strip() or None
+        current_org = _organisation_text().strip() or None
         try:
             intact = verify_seal(report, sealed, organisation=current_org)
         except Exception as exc:  # noqa: BLE001
@@ -676,6 +797,9 @@ def render_report_stage() -> None:
                 if intact
                 else ("broken", content_digest(report, organisation=current_org))
             )
+        # The verdict is a statement about THIS name. Recorded alongside it so the
+        # banner can retire itself if the name moves on.
+        st.session_state["seal_check_org"] = current_org
         _audit().record_stage(
             action="SEAL_VERIFIED",
             actor=_analyst(),
@@ -688,6 +812,20 @@ def render_report_stage() -> None:
         st.rerun()
 
     check = st.session_state.get("seal_check")
+    # A verdict outlives its subject if the organisation is edited afterwards: the
+    # caption two lines below invites exactly that edit, so a green "Seal intact" left
+    # standing under a name it was never computed against is a lie the UI told itself.
+    # The on_change callback clears it; this is the belt-and-braces check for any path
+    # that changes the name without firing the callback.
+    if check and st.session_state.get("seal_check_org") != (
+        _organisation_text().strip() or None
+    ):
+        result_col.info(
+            "**Not verified since the last change** — the organisation name changed "
+            "after the previous check. Click Verify Integrity again.",
+            icon="↻",
+        )
+        check = None
     if check:
         outcome, detail = check
         if outcome == "intact":
@@ -724,7 +862,9 @@ def render_report_stage() -> None:
             mime="application/pdf",
         )
         st.caption(
-            "Re-hash the downloaded file to verify the artefact. "
+            "Re-hash the downloaded file and compare it with the **PDF artefact "
+            "SHA-256** in the seal panel above — not the large content seal, which "
+            "covers the findings and organisation rather than the PDF bytes. "
             f"Windows: `certutil -hashfile {report.report_id}.pdf SHA256` · "
             f"Linux/macOS: `sha256sum {report.report_id}.pdf`"
         )
@@ -792,6 +932,9 @@ def main() -> None:
         initial_sidebar_state="expanded",
     )
     init_state()
+    # BEFORE any widget is instantiated: re-seed the Stage 5 organisation input from its
+    # memo, so a value typed before a Stage 4 decision is still there afterwards.
+    _restore_organisation()
 
     render_header()
 

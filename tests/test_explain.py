@@ -169,6 +169,148 @@ def test_explain_standalone_without_injected_rulebase(findings):
         set_rulebase(None)
 
 
+# ---------------------------------------------------------------------------------
+# Remediation-step rendering (regression: raw placeholders shipped to the PDF)
+# ---------------------------------------------------------------------------------
+#
+# These tests close a gap the 142-test suite left open: every explain test above
+# asserted on plain_english only, so remediation_steps were never rendered
+# through the template formatter at all. The rule base authors its steps as
+# templates ("Apply the vendor security update for {cve_id} to {hostname} ...")
+# and explain() copied them verbatim, so 48/48 explanations in the submission
+# artefact shipped literal {hostname} into the Stage 4 review cards and the
+# compiled PDF (72 PDF lines with {hostname}, 4 with {cve_id}).
+
+_PLACEHOLDER_MSG = (
+    "unsubstituted template placeholder in a remediation step -- "
+    "steps must be rendered through the same formatter as plain_english"
+)
+
+
+def _assert_step_is_clean(step, finding):
+    assert isinstance(step, str) and step.strip(), f"{finding.finding_id}: empty step"
+    assert "{" not in step and "}" not in step, (
+        f"{finding.finding_id}: {_PLACEHOLDER_MSG}: {step!r}"
+    )
+    assert "None" not in step, (
+        f"{finding.finding_id}: literal 'None' leaked into a remediation step: {step!r}"
+    )
+
+
+def test_no_remediation_step_contains_a_raw_placeholder(findings, rulebase):
+    """Sweep the whole corpus: no step may carry a literal {...} or "None".
+
+    Guards the defect where 48/48 explanations shipped raw ``{hostname}`` into
+    the PDF because explain() copied rule remediation_steps verbatim instead of
+    rendering them against the finding context.
+    """
+    assert findings, "expected a populated corpus"
+    checked = 0
+    for finding in findings:
+        for step in explain(finding, rulebase=rulebase).remediation_steps:
+            _assert_step_is_clean(step, finding)
+            checked += 1
+    assert checked > 0
+
+
+def test_every_issue_code_renders_clean_remediation(findings, rulebase):
+    """Per-IssueCode coverage, so a regression in one rule's steps is localised."""
+    by_code = {}
+    for finding in findings:
+        by_code.setdefault(finding.issue_code, finding)
+    assert by_code, "expected findings across the issue codes"
+
+    for issue_code, finding in by_code.items():
+        steps = explain(finding, rulebase=rulebase).remediation_steps
+        assert steps, f"{issue_code.value}: no remediation steps"
+        for step in steps:
+            _assert_step_is_clean(step, finding)
+
+
+def test_remediation_steps_substitute_the_asset_and_cve(findings, rulebase):
+    """The placeholders must resolve to real values, not merely be stripped."""
+    patch = [
+        f for f in findings
+        if f.issue_code == IssueCode.PATCH_MISSING and f.triggering_cve
+    ]
+    assert patch, "expected PATCH_MISSING findings with a triggering CVE"
+    finding = patch[0]
+    steps = explain(finding, rulebase=rulebase).remediation_steps
+    joined = " ".join(steps)
+    assert finding.asset.hostname in joined, (
+        f"hostname never substituted into remediation steps: {steps!r}"
+    )
+    assert finding.triggering_cve in joined, (
+        f"CVE never substituted into remediation steps: {steps!r}"
+    )
+
+
+def test_remediation_without_cve_cvss_or_patch_date_reads_cleanly(findings, rulebase):
+    """The common case: most findings are configuration/process failures with no
+    CVE, no CVSS and no patch date, so {cve_id}/{cvss_score}/{days} are
+    unresolvable. Those steps must degrade to prose, not raise or emit "None"."""
+    no_cve = [
+        f for f in findings
+        if f.triggering_cve is None and f.triggering_cvss is None
+    ]
+    assert len(no_cve) > 100, "expected the unscored findings to dominate the corpus"
+    for finding in no_cve:
+        for step in explain(finding, rulebase=rulebase).remediation_steps:
+            _assert_step_is_clean(step, finding)
+
+
+def test_hostile_remediation_template_degrades_to_prose(findings):
+    """Unknown names, bad indices, dud attribute lookups and inapplicable format
+    specs in a remediation step degrade exactly as they do in the explanation."""
+    from src.models import IssueRule
+
+    finding = findings[0]
+    hostile = IssueRule(
+        rule_id=finding.rule_id,
+        issue_code=finding.issue_code,
+        title="Hostile remediation",
+        control_mappings=finding.control_mappings,
+        explanation_template="Something happened on {hostname}.",
+        remediation_steps=[
+            "Patch {cve_id} on {hostname} scoring {cvss_score:.1f} within {days} days.",
+            "Escalate to {nonexistent} and review {asset.bogus} plus {0}.",
+        ],
+    )
+    explanation = explain(finding, rule=hostile)
+    assert len(explanation.remediation_steps) == 2
+    for step in explanation.remediation_steps:
+        _assert_step_is_clean(step, finding)
+    assert finding.asset.hostname in explanation.remediation_steps[0]
+
+
+def test_no_cve_remediation_uses_the_fallback_prose(findings, rulebase):
+    """A {cve_id} hole in a step for an unscored finding reads as prose."""
+    from src.models import IssueRule
+
+    no_cve = next(f for f in findings if f.triggering_cve is None)
+    rule = IssueRule(
+        rule_id=no_cve.rule_id,
+        issue_code=no_cve.issue_code,
+        title="No-CVE remediation",
+        control_mappings=no_cve.control_mappings,
+        explanation_template="Issue on {hostname}.",
+        remediation_steps=["Remediate {cve_id} on {hostname}."],
+    )
+    step = explain(no_cve, rule=rule).remediation_steps[0]
+    _assert_step_is_clean(step, no_cve)
+    assert "no associated CVE" in step
+    assert no_cve.asset.hostname in step
+
+
+def test_remediation_rendering_does_not_alter_plain_english(findings, rulebase):
+    """The explanation path was already correct; rendering steps must not touch it."""
+    for finding in _sample(findings, step=25):
+        explanation = explain(finding, rulebase=rulebase)
+        assert finding.asset.hostname in explanation.plain_english
+        assert "{" not in explanation.plain_english
+        assert "}" not in explanation.plain_english
+
+
 def test_explain_finding_with_no_vulnerabilities(rulebase):
     record = AssetRecord(
         asset_id="AST-EMPTY",
