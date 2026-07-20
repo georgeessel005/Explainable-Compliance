@@ -207,3 +207,83 @@ def test_generate_matches_the_shipped_dataset():
     records = generate()
     on_disk = json.loads(DATA_PATH.read_text(encoding="utf-8"))
     assert records == on_disk
+
+
+# ---------------------------------------------------------------------------
+# describe_rejection: plain-English rendering of a stored ValidationError.
+#
+# Added after the project owner read the raw pydantic dumps in the sidebar as
+# "error files" -- i.e. assumed the tool was broken. The validation behaviour was
+# always correct; the presentation leaked "[type=string_pattern_mismatch]" and a
+# link to errors.pydantic.dev, which reads as a stack trace. RejectionError.reason
+# still stores the unedited string (models.py is frozen and the audit trail wants
+# the full text); only the rendering changed.
+# ---------------------------------------------------------------------------
+
+def test_every_rejection_renders_without_pydantic_noise(ingestion):
+    """No rejected record should surface validator internals to the reader."""
+    from src.ingestion.loader import describe_rejection
+
+    assert ingestion.rejected, "expected the seeded malformed records"
+    for rejection in ingestion.rejected:
+        summary = describe_rejection(rejection)
+        headline = summary.headline
+
+        assert headline.strip(), "empty headline"
+        assert "[type=" not in headline
+        assert "errors.pydantic.dev" not in headline
+        assert "input_type=" not in headline
+        assert "validation error" not in headline.lower()
+        # The asset is always named, so a reader can find the offending record.
+        assert summary.asset_id and summary.asset_id != "unknown asset"
+        # And the unedited reason is preserved for the audit trail.
+        assert summary.raw_reason == rejection.reason
+
+
+def test_each_seeded_rejection_gets_its_specific_message(ingestion):
+    """The seven seeded paths each render a distinct, recognisable explanation."""
+    from src.ingestion.loader import describe_rejection
+
+    by_asset = {
+        describe_rejection(r).asset_id: describe_rejection(r)
+        for r in ingestion.rejected
+    }
+
+    expected = {
+        "AST-9001": "CVE identifier",
+        "AST-9002": "CVSS score",
+        "AST-9003": "recognised values",
+        "AST-9004": "missing",
+        "AST-9005": "Unexpected field",
+        "AST-9006": "Unexpected field",
+        "AST-9007": "valid date",
+    }
+    for asset_id, fragment in expected.items():
+        assert asset_id in by_asset, f"{asset_id} no longer rejected"
+        assert fragment.lower() in by_asset[asset_id].headline.lower(), (
+            f"{asset_id}: {by_asset[asset_id].headline!r} lost its specific wording"
+        )
+
+
+@pytest.mark.parametrize(
+    "reason",
+    [
+        "",
+        "something entirely unexpected",
+        "1 validation error for AssetRecord",  # truncated: no field line
+        "KeyError: 'boom'",  # a non-ValidationError path
+        "1 validation error for AssetRecord\nfield\n  msg [type=brand_new_code_2099]",
+    ],
+)
+def test_describe_rejection_never_raises_on_odd_input(reason):
+    """An unparseable reason must degrade to text, never explode.
+
+    The parser reads a formatted string, so it has to survive pydantic changing
+    that format or a non-validation error taking the same path.
+    """
+    from src.ingestion.loader import describe_rejection
+    from src.models import RejectionError
+
+    summary = describe_rejection(RejectionError(raw={"asset_id": "AST-X"}, reason=reason))
+    assert summary.raw_reason == reason
+    assert isinstance(summary.headline, str)

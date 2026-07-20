@@ -13,8 +13,9 @@ structurally unusable payload raises.
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
-from typing import Any
+from typing import Any, NamedTuple
 
 from pydantic import ValidationError
 
@@ -94,3 +95,112 @@ def load_and_validate(path: str) -> IngestionResult:
             )
 
     return result
+
+
+# ---------------------------------------------------------------------------
+# Presentation helper
+#
+# RejectionError.reason holds str(ValidationError) verbatim, which is the right
+# thing to store: it is complete, and the audit story depends on not paraphrasing
+# away detail. It is the wrong thing to *show* a reader unedited -- pydantic's
+# format ("[type=string_pattern_mismatch, input_type=str]" plus a link to
+# errors.pydantic.dev) reads as a leaked stack trace rather than a designed
+# rejection, and readers assume the tool has crashed.
+#
+# describe_rejection() renders the same fact in plain English. It parses the
+# stored reason rather than capturing structured errors at validation time,
+# because RejectionError.reason is a str in the frozen models.py. Anything it
+# cannot parse degrades to the raw string, never an exception.
+# ---------------------------------------------------------------------------
+
+_PROBLEM_BY_TYPE = {
+    "string_pattern_mismatch": "Value does not match the required format",
+    "less_than_equal": "Value is above the allowed maximum",
+    "greater_than_equal": "Value is below the allowed minimum",
+    "enum": "Not one of the recognised values",
+    "missing": "Required field is missing",
+    "extra_forbidden": "Unexpected field that the schema does not allow",
+    "date_from_datetime_parsing": "Not a valid date",
+    "date_parsing": "Not a valid date",
+    "int_parsing": "Not a valid whole number",
+    "float_parsing": "Not a valid number",
+    "bool_parsing": "Not a valid true/false value",
+    "string_type": "Expected text",
+}
+
+# Field-specific wording, which beats the generic message where we know the rule.
+_PROBLEM_BY_FIELD = {
+    ("cve_id", "string_pattern_mismatch"): "Invalid CVE identifier (expected CVE-YYYY-NNNN)",
+    ("cvss_score", "less_than_equal"): "CVSS score above 10 (valid range is 0.0-10.0)",
+    ("cvss_score", "greater_than_equal"): "CVSS score below 0 (valid range is 0.0-10.0)",
+}
+
+
+class RejectionSummary(NamedTuple):
+    """A rejected record rendered for a human reader. `raw_reason` is unmodified."""
+
+    asset_id: str
+    field: str
+    problem: str
+    value: str
+    raw_reason: str
+
+    @property
+    def headline(self) -> str:
+        """One line: what was wrong, and with which value."""
+        if self.value:
+            return f"{self.problem} — {self.value}"
+        return self.problem
+
+
+def describe_rejection(rejection: RejectionError) -> RejectionSummary:
+    """Turn a stored ValidationError string into a plain-English summary.
+
+    Never raises: an unparseable reason yields the raw text as the problem, so a
+    surprising error shape degrades to today's behaviour rather than hiding a record.
+    """
+    reason = rejection.reason or ""
+    asset_id = str(rejection.raw.get("asset_id") or "unknown asset")
+
+    # pydantic v2 lays each error out as:
+    #     N validation error(s) for AssetRecord
+    #     <field.path>
+    #       <message> [type=<code>, input_value=<value>, input_type=<type>]
+    field = ""
+    lines = [ln for ln in reason.splitlines() if ln.strip()]
+    if len(lines) >= 2 and "validation error" in lines[0]:
+        field = lines[1].strip()
+
+    err_type = ""
+    match = re.search(r"\[type=([a-z_]+)", reason)
+    if match:
+        err_type = match.group(1)
+
+    value = ""
+    match = re.search(r"input_value=(.*?)(?:, input_type=|\])", reason, re.S)
+    if match:
+        value = match.group(1).strip()
+        if len(value) > 60:
+            value = value[:57] + "..."
+
+    leaf = field.rsplit(".", 1)[-1] if field else ""
+    problem = (
+        _PROBLEM_BY_FIELD.get((leaf, err_type))
+        or _PROBLEM_BY_TYPE.get(err_type)
+        or (lines[2].strip().split("[type=")[0].strip() if len(lines) >= 3 else "")
+        or reason.strip()
+    )
+    if err_type == "extra_forbidden" and leaf:
+        problem = f"Unexpected field '{leaf}' that the schema does not allow"
+        value = ""
+    if err_type == "missing" and leaf:
+        problem = f"Required field '{leaf}' is missing"
+        value = ""
+
+    return RejectionSummary(
+        asset_id=asset_id,
+        field=field,
+        problem=problem,
+        value=value,
+        raw_reason=reason,
+    )

@@ -32,7 +32,7 @@ from src.audit.log import AuditLog
 from src.data.generate_synthetic import main as generate_dataset
 from src.explain.explainer import explain
 from src.gate import can_generate_report, escalated_finding_ids, gate_status
-from src.ingestion.loader import load_and_validate
+from src.ingestion.loader import describe_rejection, load_and_validate
 from src.mapping.engine import load_rules, map_findings
 from src.mapping.matrix import build_matrix
 from src.models import (
@@ -371,9 +371,24 @@ def render_sidebar() -> None:
             col_b.metric("Rejected", len(result.rejected))
             if result.rejected:
                 with st.expander(f"Rejected records ({len(result.rejected)})"):
+                    st.caption(
+                        "These records are **deliberately malformed** seed data. Stage 1 "
+                        "rejects anything that fails validation instead of guessing at "
+                        "it, and carries on with the rest — that refusal is the "
+                        "behaviour being demonstrated, not a failure."
+                    )
                     for i, rejection in enumerate(result.rejected, start=1):
-                        st.markdown(f"**{i}.** {rejection.reason}")
-                        st.json(rejection.raw, expanded=False)
+                        summary = describe_rejection(rejection)
+                        st.markdown(
+                            f"**{i}. {summary.asset_id}** — {summary.headline}"
+                        )
+                        if summary.field:
+                            st.caption(f"field: `{summary.field}`")
+                        # The unedited validator output stays one click away: the audit
+                        # story depends on the full reason remaining available.
+                        with st.expander("Raw validator output"):
+                            st.code(summary.raw_reason, language="text")
+                            st.json(rejection.raw, expanded=False)
             else:
                 st.caption("No records rejected.")
 
