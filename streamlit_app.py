@@ -32,6 +32,19 @@ from typing import Optional
 
 import streamlit as st
 
+# ─────────────────────────────────────────────────────────────────────────────
+# MAINTENANCE SWITCH.
+# While True, the deployed app renders a blank page and stops before loading
+# anything else. To bring the app back: set this to False and push (or
+# `git revert` the commit that set it), and Streamlit Cloud auto-redeploys in
+# ~1-2 minutes. Placed before the app's own imports on purpose, so the holding
+# page can never be broken by the rest of the code.
+# ─────────────────────────────────────────────────────────────────────────────
+MAINTENANCE_MODE = True
+if MAINTENANCE_MODE:
+    st.set_page_config(page_title="", layout="centered")
+    st.stop()
+
 from src.audit.log import AuditLog
 from src.data.generate_synthetic import generate as generate_records
 from src.data.generate_synthetic import write_dataset
