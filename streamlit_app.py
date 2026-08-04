@@ -40,7 +40,7 @@ import streamlit as st
 # ~1-2 minutes. Placed before the app's own imports on purpose, so the holding
 # page can never be broken by the rest of the code.
 # ─────────────────────────────────────────────────────────────────────────────
-MAINTENANCE_MODE = True
+MAINTENANCE_MODE = False
 if MAINTENANCE_MODE:
     st.set_page_config(page_title="", layout="centered")
     st.stop()
