@@ -31,6 +31,7 @@ from __future__ import annotations
 
 import hashlib
 from datetime import datetime, timezone
+from pathlib import Path
 
 import pytest
 
@@ -51,6 +52,8 @@ from src.report.pdf_builder import compile_pdf
 
 from tests.conftest import ASSETS_JSON_SHA256, DATA_PATH
 from tests.helpers import extract_pdf_text, make_decision
+
+APP_PATH = Path(__file__).resolve().parents[1] / "streamlit_app.py"
 
 GENERATED_AT = datetime(2025, 7, 1, 12, 0, 0, tzinfo=timezone.utc)
 
@@ -157,7 +160,7 @@ def test_app_sliders_produce_a_correspondingly_sized_run():
     """Driving the real sliders changes the size of the whole Stage 1-3 run."""
     from streamlit.testing.v1 import AppTest
 
-    at = AppTest.from_file("streamlit_app.py", default_timeout=300)
+    at = AppTest.from_file(str(APP_PATH), default_timeout=300)
     at.run()
     assert not at.exception, [str(e) for e in at.exception]
 
@@ -201,7 +204,7 @@ def test_app_sliders_produce_a_correspondingly_sized_run():
 def test_zero_malformed_slider_gives_an_empty_rejection_panel():
     from streamlit.testing.v1 import AppTest
 
-    at = AppTest.from_file("streamlit_app.py", default_timeout=300)
+    at = AppTest.from_file(str(APP_PATH), default_timeout=300)
     at.run()
     at.sidebar.slider(key="n_records").set_value(20)
     at.run()
@@ -238,7 +241,7 @@ def test_app_sliders_never_write_the_committed_dataset():
     before_mtime = DATA_PATH.stat().st_mtime_ns
     assert before == ASSETS_JSON_SHA256
 
-    at = AppTest.from_file("streamlit_app.py", default_timeout=300)
+    at = AppTest.from_file(str(APP_PATH), default_timeout=300)
     at.run()
     # Deliberately non-default on BOTH sliders: the regeneration path.
     at.sidebar.slider(key="n_records").set_value(30)
@@ -276,7 +279,7 @@ def test_default_sliders_load_the_committed_dataset_without_regenerating():
 
     before_mtime = DATA_PATH.stat().st_mtime_ns
 
-    at = AppTest.from_file("streamlit_app.py", default_timeout=300)
+    at = AppTest.from_file(str(APP_PATH), default_timeout=300)
     at.run()
     assert at.session_state["n_records"] == 120
     assert at.session_state["n_malformed"] == 7
@@ -436,7 +439,7 @@ def test_app_reports_a_broken_seal_after_the_org_name_is_edited():
                 return candidate
         raise AssertionError(f"No button labelled like {label_part!r}")
 
-    at = AppTest.from_file("streamlit_app.py", default_timeout=300)
+    at = AppTest.from_file(str(APP_PATH), default_timeout=300)
     at.run()
     # A small run: this test is about the seal, not about volume.
     at.sidebar.slider(key="n_records").set_value(20)

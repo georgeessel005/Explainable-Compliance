@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import os
 import tempfile
+from pathlib import Path
 from collections import Counter
 from datetime import datetime, timedelta, timezone
 
@@ -45,9 +46,12 @@ from src.ui.review import status_of
 from tests.conftest import RULES_DIR
 from tests.helpers import T0, extract_pdf_text, make_decision
 
+APP_PATH = Path(__file__).resolve().parents[1] / "streamlit_app.py"
+
 APPROVE = DecisionType.APPROVE
 MODIFY = DecisionType.MODIFY
 ESCALATE = DecisionType.ESCALATE
+
 
 
 def _find_button(at, label_part: str):
@@ -108,7 +112,7 @@ def _decide(at, finding_id: str, label: str):
 def test_real_approve_click_persists_and_advances_coverage():
     from streamlit.testing.v1 import AppTest
 
-    at = AppTest.from_file("streamlit_app.py", default_timeout=300)
+    at = AppTest.from_file(str(APP_PATH), default_timeout=300)
     at.run()
     assert not at.exception
     _drive_stages_1_to_3(at)
@@ -150,7 +154,7 @@ def test_real_approve_click_persists_and_advances_coverage():
 def test_real_escalate_click_blocks_gate_via_ui_state():
     from streamlit.testing.v1 import AppTest
 
-    at = AppTest.from_file("streamlit_app.py", default_timeout=300)
+    at = AppTest.from_file(str(APP_PATH), default_timeout=300)
     at.run()
     _drive_stages_1_to_3(at)
     findings = at.session_state["findings"]
@@ -441,7 +445,7 @@ def test_verified_only_finding_has_no_caveat(
 def test_bulk_approve_records_individual_decisions_and_spares_escalation():
     from streamlit.testing.v1 import AppTest
 
-    at = AppTest.from_file("streamlit_app.py", default_timeout=300)
+    at = AppTest.from_file(str(APP_PATH), default_timeout=300)
     at.run()
     _drive_stages_1_to_3(at)
     findings = at.session_state["findings"]
@@ -593,7 +597,7 @@ def test_blank_first_load_does_not_claim_stage_5_unlocked():
     """A cold app with nothing loaded must read as locked, not resolved."""
     from streamlit.testing.v1 import AppTest
 
-    at = AppTest.from_file("streamlit_app.py", default_timeout=300).run()
+    at = AppTest.from_file(str(APP_PATH), default_timeout=300).run()
 
     assert not at.exception, "blank first load raised"
     assert not at.session_state["findings"], "expected a blank state"
