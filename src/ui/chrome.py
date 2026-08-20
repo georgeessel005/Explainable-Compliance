@@ -60,7 +60,7 @@ def render_header(status_text: str = "Engine deterministic · v1.0") -> None:
       <div style="color:#ffffff;font-size:1.55rem;font-weight:800;
                   letter-spacing:-0.01em;line-height:1.15;">CompliancePilot</div>
       <div style="color:#bcccdc;font-size:0.86rem;margin-top:0.2rem;">
-        Rule-Based Cross-Compliance Harmonisation Pipeline &mdash;
+        Explainable Cybersecurity Compliance Mapping for SMEs &mdash;
         Cyber Essentials / CE+ &harr; ISO/IEC 27001:2022
       </div>
     </div>
