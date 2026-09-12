@@ -1,15 +1,19 @@
-# Explainable Compliance Tool — Cyber Essentials × ISO/IEC 27001:2022
+# CompliancePilot
+Explainable Cybersecurity Compliance Mapping for UK SMEs
+Cyber Essentials / Cyber Essentials Plus ↔ ISO/IEC 27001:2022
 
-A rule-based, explainable compliance mapping tool with a mandatory human-in-the-loop
-validation gate. Deliberately no ML: every finding traces back to a declarative rule, so
-every output can be explained to an auditor.
+CompliancePilot is a rule-based cybersecurity compliance artefact developed as part of an MSc Cybersecurity research project. It processes structured security findings, maps them across Cyber Essentials, Cyber Essentials Plus and selected ISO/IEC 27001:2022 Annex A controls, produces plain-English explanations and requires Human-in-the-Loop review before a final report can be generated.
 
-The tool ingests synthetic security scan data, maps each issue to Cyber Essentials,
-Cyber Essentials Plus and ISO/IEC 27001:2022 Annex A controls, generates a plain-English
-explanation per finding, requires an analyst to Approve / Modify / Escalate each one, and
-only then compiles a SHA-256 hashed PDF report.
+The system deliberately uses deterministic rules rather than machine learning so that each implemented recommendation can be traced to explicit rule logic and reviewed by an analyst.
 
----
+## Live Artefact
+
+Streamlit application: https://explainable-compliance-qpvbphrthjc8gxfgrsbdxo.streamlit.app/
+
+Source repository:
+https://github.com/georgeessel005/Explainable-Compliance
+
+The application can also be run locally using the instructions below.
 
 ## Run locally
 
@@ -70,33 +74,15 @@ certutil -hashfile <report>.pdf SHA256
 
 ---
 
-## The Article 22 gate — the core design control
+## Human-in-the-Loop Release Gate
 
-**Stage 5 cannot fire while any finding is still escalated.**
+Stage 5 cannot generate the final report until all findings have been reviewed and no unresolved escalation remains.
 
-This is the single most important behaviour in the system. It is what makes the tool
-*decision support* rather than *automated decision-making*, and it is the design response
-to UK GDPR Article 22 (the right not to be subject to a solely automated decision).
+Analysts can Approve, Modify or Escalate each finding. Approve and Modify are treated as resolved review states, while an unresolved Escalate blocks report generation. If an analyst later resolves an escalation through Approve or Modify, the earlier decision remains in the append-only audit history.
 
-How it works — `src/gate.py`:
+The release condition is enforced at more than one level. The Streamlit interface prevents report generation while the review conditions remain unresolved, and the report-generation path performs a further check before compiling the PDF. This prevents the final report from depending only on the state of a visible interface button.
 
-- `can_generate_report(decisions: list[AnalystDecision]) -> bool` returns `False` if **any**
-  finding's effective decision is Escalate.
-- The decision list is an **append-only history**, not a set. A finding may appear in it
-  more than once. Duplicates are resolved explicitly: the **latest decision by timestamp
-  wins**, with list order breaking ties. Only that effective decision is tested.
-- An escalation is therefore *resolved* when, and only when, the analyst replaces that
-  finding's decision with Approve or Modify. Approving after escalating unblocks the
-  report; escalating after approving re-blocks it. The superseded decision stays in the
-  audit trail — resolution is recorded, never erased.
-- **Defence in depth:** the Stage 5 button is disabled while the gate is red, but a
-  disabled button is a UI affordance, not a control. `compile_report()` re-checks
-  `can_generate_report` immediately before building the PDF, and audits any refused
-  attempt as `STAGE_5_BLOCKED`.
-
-The gate deliberately covers escalations only. "Has every finding been reviewed?" is a
-separate, weaker coverage check (`gate_status`) surfaced in the UI — folding it into
-`can_generate_report` would change what the Article 22 control means.
+Human review is implemented as an accountability and quality-control feature. It should not be interpreted as a claim that CompliancePilot automatically satisfies a particular legal requirement or that human review guarantees the correctness of every compliance recommendation.
 
 ---
 
@@ -123,18 +109,20 @@ Surfaced live on the **Evaluation metrics** tab (`src/ui/metrics.py`):
 - **Human Interaction Load** — override rate = (Modify + Escalate) ÷ findings reviewed,
   using each finding's latest decision. Repeat visits are reported as actions per finding.
 
-The **Mapping matrix** tab renders the CE pillar × ISO control heatmap (Appendix Ai):
+The **Mapping matrix** tab renders the CE pillar × ISO control heatmap :
 P = Primary, S = Secondary, blank = no mapping.
 
 ---
 
 ## Academic integrity note
 
-George's full matrix has **47 mapped intersections**, of which only the **15 rows verified
-against the interim report (Appendix Aii)** are authoritative. Every other intersection in
-the rule base is a clearly-flagged, best-effort mapping and is listed in
-`rules/UNVERIFIED_MAPPINGS.md`. **Confirm each against the framework documentation before
-submission** — unverified mappings must not be presented as sourced.
+The wider research analysis produced 47 classified Cyber Essentials / ISO/IEC 27001 relationships. The executable CompliancePilot rule base implements a smaller subset.
+
+The executable implementation contains 25 relationship-level entries: 15 project-verified/source-backed relationships and 10 best-effort relationships. When duplicate framework intersections are collapsed for matrix display, these produce 24 unique cells: 15 project-verified/source-backed and 9 best-effort.
+
+Best-effort mappings are deliberately identified as such and should not be interpreted as independently validated mappings. Cross-Mapping Fidelity measures structural implementation coverage within the rule set; it does not establish independent mapping accuracy.
+
+Detailed mapping evidence and provenance are documented in Appendix D.2 of the dissertation..
 
 ---
 
